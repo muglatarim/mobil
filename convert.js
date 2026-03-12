@@ -57,7 +57,7 @@ const hastalıklar = raw1.map((row, i) => ({
   kordinasyonTarihi: excelDateToISO(row['Varış ve Kordon Tarihi']),
   cikisTarihi: excelDateToISO(row['Çıkış Tarihi']),
   onaylamaTarihi: excelDateToISO(row['Onaylama Tarihi']),
-  hastaliкBitisTarihi: excelDateToISO(row['Hastalık Bitiş Tarihi']),
+  hastalikBitisTarihi: excelDateToISO(row['Hastalık Bitiş Tarihi']),
   sonZiyaretTarihi: excelDateToISO(row['Son Ziyaret Tarihi']),
   ziyaretSayisi: row['Ziyaret Sayısı'] || 0,
   enlem: row['Enlem (X)'] || null,

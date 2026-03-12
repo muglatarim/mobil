@@ -49,7 +49,7 @@
       <input type="file" id="file-hastalik" accept=".xls,.xlsx">
     </div>
     <button class="btn" id="btn-convert-hastalik" disabled onclick="convertHastalik()">
-      ⚙️ Dönüştür → hastalıklar.json
+      ⚙️ Dönüştür → hastaliklar.json
     </button>
     <div class="log-area" id="log-hastalik">Dosya seçilmedi...</div>
   </div>
@@ -57,15 +57,23 @@
   <!-- KisitlamaMahalleAra.xls -->
   <div class="card">
     <h3>🚫 KisitlamaMahalleAra.xls</h3>
+    <p style="font-size:11px;color:var(--text-muted);margin-bottom:10px">
+      Bu işlemden sonra hem <code>karantina.json</code> hem de harita poligonları için <code>mahalleler_karantina.json</code> güncellenmelidir.
+    </p>
     <div class="file-drop" id="drop-karantina" onclick="document.getElementById('file-karantina').click()">
       <div class="icon">📂</div>
       <p>Tıklayın veya buraya sürükleyin</p>
       <p id="karantina-fname" style="color:var(--accent);margin-top:4px"></p>
       <input type="file" id="file-karantina" accept=".xls,.xlsx">
     </div>
-    <button class="btn" id="btn-convert-karantina" disabled onclick="convertKarantina()">
-      ⚙️ Dönüştür → karantina.json
-    </button>
+    <div style="display:flex;gap:10px">
+      <button class="btn" id="btn-convert-karantina" disabled onclick="convertKarantina()">
+        1. Dönüştür → karantina.json
+      </button>
+      <button class="btn" id="btn-merge-geojson" disabled onclick="mergeGeoJSON()">
+        2. Güncelle → mahalleler_karantina.json
+      </button>
+    </div>
     <div class="log-area" id="log-karantina">Dosya seçilmedi...</div>
   </div>
 
@@ -119,6 +127,15 @@
           input.files = dt.files;
           fname.textContent = file.name;
           btn.disabled = false;
+          if (btnId === 'btn-convert-karantina') document.getElementById('btn-merge-geojson').disabled = false;
+        }
+      });
+
+      input.addEventListener('change', () => {
+        if (input.files[0]) {
+          fname.textContent = input.files[0].name;
+          btn.disabled = false;
+          if (btnId === 'btn-convert-karantina') document.getElementById('btn-merge-geojson').disabled = false;
         }
       });
     }
@@ -153,8 +170,10 @@
             hastalik: row['Hastalık'] || '',
             durum: row['Durum'] || '',
             ihbarTarihi: excelDateToISO(row['İhbar Tarihi']),
+            kordinasyonTarihi: excelDateToISO(row['Varış ve Kordon Tarihi']),
+            cikisTarihi: excelDateToISO(row['Çıkış Tarihi']),
             onaylamaTarihi: excelDateToISO(row['Onaylama Tarihi']),
-            hastaliкBitisTarihi: excelDateToISO(row['Hastalık Bitiş Tarihi']),
+            hastalikBitisTarihi: excelDateToISO(row['Hastalık Bitiş Tarihi']),
             sonZiyaretTarihi: excelDateToISO(row['Son Ziyaret Tarihi']),
             ziyaretSayisi: row['Ziyaret Sayısı'] || 0,
             enlem: row['Enlem (X)'] || null,
@@ -164,8 +183,8 @@
           log(logId, `📍 ${kayitlar.length} koordinatlı kayıt (koordinatsızlar atlandı).`);
 
           const json = { guncelleme: new Date().toISOString(), kayitlar };
-          downloadJSON(json, 'hastalıklar.json');
-          log(logId, '💾 hastalıklar.json indirildi! data/ klasörüne kopyalayın.', 'status-ok');
+          downloadJSON(json, 'hastaliklar.json');
+          log(logId, '💾 hastaliklar.json indirildi! data/ klasörüne kopyalayın.', 'status-ok');
         } catch (err) {
           log(logId, '❌ Hata: ' + err.message, 'status-err');
         }
@@ -222,6 +241,86 @@
         }
       };
       reader.readAsArrayBuffer(file);
+    }
+
+    // ─── GeoJSON Birleştirme (Karantina bölgelerini poligonlara embed et) ──
+    async function mergeGeoJSON() {
+      const file = document.getElementById('file-karantina').files[0];
+      if (!file) return;
+      const logId = 'log-karantina';
+      log(logId, '\n🗺️ GeoJSON birleştirme başlatıldı...');
+
+      try {
+        // 1. Karantina verilerini işle
+        const reader = new FileReader();
+        reader.onload = async function(e) {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const raw = XLSX.utils.sheet_to_json(ws);
+          
+          const karantinaList = raw.map(row => {
+            const mahalleBirlesik = row['Mahalle'] || '';
+            const mahalleler = mahalleBirlesik.split(',').map(m => m.trim()).filter(Boolean);
+            return {
+              mahalleler,
+              ilce: row['İlçe'] || '',
+              kisitlamaTipi: row['Kısıtlama Tipi'] || '',
+              hastalik: row['Hastalık'] || '',
+              baslangicTarihi: excelDateToISO(row['Başlangıç Tarihi']),
+              bitisTarihi: excelDateToISO(row['Bitiş Tarihi']),
+              aktif: !row['Bitiş Tarihi']
+            };
+          }).filter(r => r.aktif);
+
+          // 2. Mahalleler.json'u yükle
+          log(logId, '📡 Orjinal Mahalleler.json yükleniyor...');
+          const geoRes = await fetch('./Mahalleler.json');
+          const geo = await geoRes.json();
+
+          // 3. Normalizasyon ve Eşleştirme
+          const normalize = (s) => (s || '').toString().toUpperCase().trim()
+            .replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U')
+            .replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
+
+          const karantinaMap = new Map();
+          karantinaList.forEach(k => {
+            k.mahalleler.forEach(m => {
+              const key = normalize(m) + '|' + normalize(k.ilce);
+              const mevcut = karantinaMap.get(key) || [];
+              mevcut.push({
+                hastalik: k.hastalik,
+                kisitlamaTipi: k.kisitlamaTipi,
+                baslangicTarihi: k.baslangicTarihi
+              });
+              karantinaMap.set(key, mevcut);
+            });
+          });
+
+          // 4. Embed et
+          let count = 0;
+          geo.features.forEach(f => {
+            const key = normalize(f.properties.AD) + '|' + normalize(f.properties.ILCEAD);
+            const kisitlamalar = karantinaMap.get(key) || [];
+            if (kisitlamalar.length > 0) {
+              f.properties.karantina = kisitlamalar;
+              f.properties.karantinaAktif = true;
+              f.properties.karantinaTipi = kisitlamalar.find(kx => kx.kisitlamaTipi.includes('Koruma')) ? 'koruma' : 'gozetime';
+              count++;
+            } else {
+              f.properties.karantinaAktif = false;
+              delete f.properties.karantina;
+              delete f.properties.karantinaTipi;
+            }
+          });
+
+          log(logId, `✅ ${count} mahalle poligonu karantina olarak işaretlendi.`, 'status-ok');
+          downloadJSON(geo, 'mahalleler_karantina.json');
+          log(logId, '💾 mahalleler_karantina.json indirildi!', 'status-ok');
+        };
+        reader.readAsArrayBuffer(file);
+      } catch (err) {
+        log(logId, '❌ Hata: ' + err.message, 'status-err');
+      }
     }
   </script>
 </body>

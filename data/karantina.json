@@ -1,5 +1,5 @@
 {
-  "guncelleme": "2026-03-12T19:22:44.376Z",
+  "guncelleme": "2026-03-12T23:32:37.059Z",
   "kayitlar": [
     {
       "id": 1,
@@ -171,22 +171,6 @@
     {
       "id": 8,
       "il": "MUĞLA",
-      "ilce": "KÖYCEĞİZ",
-      "mahalleler": [
-        "DÖĞÜŞBELEN",
-        "ZAFERLER"
-      ],
-      "kisitlamaSebebi": "Hastalık",
-      "kisitlamaTipi": "Koruma Bölgesi Karantina",
-      "hastalik": "NEWCASTLE (YALANCI TAVUK VEBASI)",
-      "bildirimTarihi": "2026-03-02",
-      "baslangicTarihi": "2026-03-02",
-      "bitisTarihi": null,
-      "aktif": true
-    },
-    {
-      "id": 9,
-      "il": "MUĞLA",
       "ilce": "MİLAS",
       "mahalleler": [
         "PİNAR"
@@ -200,28 +184,7 @@
       "aktif": true
     },
     {
-      "id": 10,
-      "il": "MUĞLA",
-      "ilce": "KÖYCEĞİZ",
-      "mahalleler": [
-        "HAMİTKÖY",
-        "MERKEZ-GELİŞİM",
-        "MERKEZ-GÜLPINAR",
-        "MERKEZ-ULUCAMİ",
-        "MERKEZ-YENİMAHALLE",
-        "TOPARLAR",
-        "YANGI"
-      ],
-      "kisitlamaSebebi": "Hastalık",
-      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
-      "hastalik": "NEWCASTLE (YALANCI TAVUK VEBASI)",
-      "bildirimTarihi": "2026-03-02",
-      "baslangicTarihi": "2026-03-02",
-      "bitisTarihi": null,
-      "aktif": true
-    },
-    {
-      "id": 11,
+      "id": 9,
       "il": "MUĞLA",
       "ilce": "KAVAKLIDERE",
       "mahalleler": [
@@ -240,7 +203,7 @@
       "aktif": true
     },
     {
-      "id": 12,
+      "id": 10,
       "il": "MUĞLA",
       "ilce": "MENTEŞE",
       "mahalleler": [
@@ -255,7 +218,7 @@
       "aktif": true
     },
     {
-      "id": 13,
+      "id": 11,
       "il": "MUĞLA",
       "ilce": "MENTEŞE",
       "mahalleler": [
