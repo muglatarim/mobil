@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veri Güncelleme – Hastalık Haritası</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    body { overflow: auto; padding: 20px; max-width: 700px; margin: 0 auto; }
+    .page-title { font-size: 22px; font-weight: 700; margin-bottom: 6px; }
+    .page-sub { font-size: 13px; color: var(--text-muted); margin-bottom: 28px; }
+    .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin-bottom: 16px; }
+    .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 14px; }
+    .file-drop { border: 2px dashed var(--border-light); border-radius: var(--radius-sm); padding: 32px; text-align: center; cursor: pointer; transition: var(--transition); margin-bottom: 14px; }
+    .file-drop:hover, .file-drop.dragover { border-color: var(--accent); background: var(--accent-glow); }
+    .file-drop p { font-size: 13px; color: var(--text-muted); margin-top: 8px; }
+    .file-drop .icon { font-size: 36px; }
+    input[type="file"] { display: none; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; background: var(--accent); border: none; border-radius: var(--radius-sm); color: #fff; padding: 10px 18px; font-size: 13px; font-weight: 500; font-family: inherit; cursor: pointer; width: 100%; justify-content: center; transition: var(--transition); }
+    .btn:hover { background: var(--accent-hover); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-danger { background: var(--danger); }
+    .log-area { background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 12px; font-size: 12px; color: var(--text-secondary); font-family: monospace; max-height: 200px; overflow-y: auto; white-space: pre-wrap; line-height: 1.6; margin-top: 12px; }
+    .status-ok { color: var(--success); }
+    .status-warn { color: var(--warning); }
+    .status-err { color: var(--danger); }
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); text-decoration: none; font-size: 13px; margin-bottom: 20px; }
+    .back-link:hover { text-decoration: underline; }
+    .info-box { background: var(--info-bg); border: 1px solid rgba(6,182,212,0.3); border-radius: var(--radius-sm); padding: 12px 14px; font-size: 12px; color: var(--text-secondary); line-height: 1.6; margin-bottom: 16px; }
+  </style>
+</head>
+<body>
+  <a href="./index.html" class="back-link">← Haritaya Dön</a>
+  <h1 class="page-title">🔄 Veri Güncelleme</h1>
+  <p class="page-sub">Yeni Excel dosyalarını yükleyerek harita verilerini güncelleyin</p>
+
+  <div class="info-box">
+    ℹ️ <strong>Nasıl çalışır?</strong> XLS dosyalarını seçin, sistem JSON dosyalarına dönüştürür ve <code>data/</code> klasörüne indirir.
+    Ardından dosyaları projenin <code>data/</code> klasörüne kopyalayın ve uygulamayı yeniden açın.
+  </div>
+
+  <!-- Hastalık_Arama.xls -->
+  <div class="card">
+    <h3>📋 Hastalık_Arama.xls</h3>
+    <div class="file-drop" id="drop-hastalik" onclick="document.getElementById('file-hastalik').click()">
+      <div class="icon">📂</div>
+      <p>Tıklayın veya buraya sürükleyin</p>
+      <p id="hastalik-fname" style="color:var(--accent);margin-top:4px"></p>
+      <input type="file" id="file-hastalik" accept=".xls,.xlsx">
+    </div>
+    <button class="btn" id="btn-convert-hastalik" disabled onclick="convertHastalik()">
+      ⚙️ Dönüştür → hastalıklar.json
+    </button>
+    <div class="log-area" id="log-hastalik">Dosya seçilmedi...</div>
+  </div>
+
+  <!-- KisitlamaMahalleAra.xls -->
+  <div class="card">
+    <h3>🚫 KisitlamaMahalleAra.xls</h3>
+    <div class="file-drop" id="drop-karantina" onclick="document.getElementById('file-karantina').click()">
+      <div class="icon">📂</div>
+      <p>Tıklayın veya buraya sürükleyin</p>
+      <p id="karantina-fname" style="color:var(--accent);margin-top:4px"></p>
+      <input type="file" id="file-karantina" accept=".xls,.xlsx">
+    </div>
+    <button class="btn" id="btn-convert-karantina" disabled onclick="convertKarantina()">
+      ⚙️ Dönüştür → karantina.json
+    </button>
+    <div class="log-area" id="log-karantina">Dosya seçilmedi...</div>
+  </div>
+
+  <!-- xlsx.js CDN -->
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    // ─── Yardımcı Fonksiyonlar ───────────────────────────────────
+    function excelDateToISO(serial) {
+      if (!serial || typeof serial !== 'number') return null;
+      const d = new Date(Math.round((serial - 25569) * 86400 * 1000));
+      return d.toISOString().split('T')[0];
+    }
+
+    function log(id, text, cls = '') {
+      const el = document.getElementById(id);
+      el.innerHTML += `<span class="${cls}">${text}</span>\n`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    function downloadJSON(data, filename) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = filename;
+      a.click();
+    }
+
+    // ─── Dosya seçimi ─────────────────────────────────────────────
+    function setupFileDrop(dropId, inputId, fnameId, btnId) {
+      const drop = document.getElementById(dropId);
+      const input = document.getElementById(inputId);
+      const fname = document.getElementById(fnameId);
+      const btn = document.getElementById(btnId);
+
+      input.addEventListener('change', () => {
+        if (input.files[0]) {
+          fname.textContent = input.files[0].name;
+          btn.disabled = false;
+        }
+      });
+
+      drop.addEventListener('dragover', e => { e.preventDefault(); drop.classList.add('dragover'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+      drop.addEventListener('drop', e => {
+        e.preventDefault();
+        drop.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          const dt = new DataTransfer();
+          dt.items.add(file);
+          input.files = dt.files;
+          fname.textContent = file.name;
+          btn.disabled = false;
+        }
+      });
+    }
+
+    setupFileDrop('drop-hastalik', 'file-hastalik', 'hastalik-fname', 'btn-convert-hastalik');
+    setupFileDrop('drop-karantina', 'file-karantina', 'karantina-fname', 'btn-convert-karantina');
+
+    // ─── Hastalık_Arama Dönüştürme ────────────────────────────────
+    function convertHastalik() {
+      const file = document.getElementById('file-hastalik').files[0];
+      if (!file) return;
+      const logId = 'log-hastalik';
+      document.getElementById(logId).innerHTML = '';
+      log(logId, '📋 Okunuyor: ' + file.name);
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const raw = XLSX.utils.sheet_to_json(ws);
+          log(logId, `✅ ${raw.length} satır okundu.`, 'status-ok');
+
+          const kayitlar = raw.map((row, i) => ({
+            id: i + 1,
+            bildirimNo: row['Bildirim No'] || '',
+            il: row['İl'] || '',
+            ilce: row['İlçe'] || '',
+            mahalle: row['Mahalle'] || '',
+            isletme: row['İşletme'] || '',
+            tur: row['Tür'] || '',
+            hastalik: row['Hastalık'] || '',
+            durum: row['Durum'] || '',
+            ihbarTarihi: excelDateToISO(row['İhbar Tarihi']),
+            onaylamaTarihi: excelDateToISO(row['Onaylama Tarihi']),
+            hastaliкBitisTarihi: excelDateToISO(row['Hastalık Bitiş Tarihi']),
+            sonZiyaretTarihi: excelDateToISO(row['Son Ziyaret Tarihi']),
+            ziyaretSayisi: row['Ziyaret Sayısı'] || 0,
+            enlem: row['Enlem (X)'] || null,
+            boylam: row['Boylam (Y)'] || null,
+          })).filter(r => r.enlem && r.boylam);
+
+          log(logId, `📍 ${kayitlar.length} koordinatlı kayıt (koordinatsızlar atlandı).`);
+
+          const json = { guncelleme: new Date().toISOString(), kayitlar };
+          downloadJSON(json, 'hastalıklar.json');
+          log(logId, '💾 hastalıklar.json indirildi! data/ klasörüne kopyalayın.', 'status-ok');
+        } catch (err) {
+          log(logId, '❌ Hata: ' + err.message, 'status-err');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ─── KisitlamaMahalleAra Dönüştürme ──────────────────────────
+    function convertKarantina() {
+      const file = document.getElementById('file-karantina').files[0];
+      if (!file) return;
+      const logId = 'log-karantina';
+      document.getElementById(logId).innerHTML = '';
+      log(logId, '📋 Okunuyor: ' + file.name);
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const raw = XLSX.utils.sheet_to_json(ws);
+          log(logId, `✅ ${raw.length} satır okundu.`, 'status-ok');
+
+          const kayitlar = raw.map((row, i) => {
+            const mahalleBirlesik = row['Mahalle'] || '';
+            const mahalleler = mahalleBirlesik.split(',').map(m => m.trim()).filter(Boolean);
+            return {
+              id: i + 1,
+              il: row['İl'] || '',
+              ilce: row['İlçe'] || '',
+              mahalleler,
+              kisitlamaSebebi: row['Kısıtlama Sebebi'] || '',
+              kisitlamaTipi: row['Kısıtlama Tipi'] || '',
+              hastalik: row['Hastalık'] || '',
+              bildirimTarihi: excelDateToISO(row['Bildirim Tarihi']),
+              baslangicTarihi: excelDateToISO(row['Başlangıç Tarihi']),
+              bitisTarihi: excelDateToISO(row['Bitiş Tarihi']) || null,
+              aktif: !row['Bitiş Tarihi'],
+            };
+          }).filter(r => r.mahalleler.length > 0);
+
+          log(logId, `🗺️ ${kayitlar.length} kısıtlama kaydı.`);
+          const aktif = kayitlar.filter(r => r.aktif);
+          const topMahalle = aktif.reduce((s, r) => s + r.mahalleler.length, 0);
+          log(logId, `⚠️ ${aktif.length} aktif kısıtlama, toplam ${topMahalle} mahalle.`, 'status-warn');
+
+          const json = { guncelleme: new Date().toISOString(), kayitlar };
+          downloadJSON(json, 'karantina.json');
+          log(logId, '💾 karantina.json indirildi! data/ klasörüne kopyalayın.', 'status-ok');
+          log(logId, '\n⚠️ Önemli: mahalleler_karantina.json\'un da güncellenmesi için');
+          log(logId, '   sunucu tarafında node convert.js komutunu çalıştırın!', 'status-warn');
+        } catch (err) {
+          log(logId, '❌ Hata: ' + err.message, 'status-err');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  </script>
+</body>
+</html>

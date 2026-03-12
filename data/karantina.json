@@ -1,0 +1,273 @@
+{
+  "guncelleme": "2026-03-12T19:22:44.376Z",
+  "kayitlar": [
+    {
+      "id": 1,
+      "il": "MUĞLA",
+      "ilce": "MİLAS",
+      "mahalleler": [
+        "ALATEPE",
+        "BAYIR",
+        "ÇAKIRALAN",
+        "ÇAMLICA",
+        "DEREKÖY",
+        "GÜRCEĞİZ",
+        "HÜSAMLAR",
+        "KALEM",
+        "KARACAAĞAÇ",
+        "ÖREN",
+        "SEKKÖY",
+        "TÜRKEVLERİ",
+        "YOĞUNOLUK"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "ŞAP - SAT 1",
+      "bildirimTarihi": "2026-03-10",
+      "baslangicTarihi": "2026-03-10",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 2,
+      "il": "MUĞLA",
+      "ilce": "MENTEŞE",
+      "mahalleler": [
+        "AKYER",
+        "AVCILAR",
+        "BOZYER",
+        "ESENÇAY",
+        "FADIL",
+        "GAZELLER",
+        "GÜNLÜCE",
+        "KUZLUK",
+        "MURATLAR",
+        "YÖRÜKOĞLU"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-02-22",
+      "baslangicTarihi": "2026-02-22",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 3,
+      "il": "MUĞLA",
+      "ilce": "ULA",
+      "mahalleler": [
+        "AKÇAPINAR",
+        "AKYAKA",
+        "ATAKÖY",
+        "ÇITLIK",
+        "ÇİÇEKLİ",
+        "ÇÖRÜŞ",
+        "ELMALI",
+        "ESENTEPE",
+        "GÖKÇE",
+        "GÖKOVA",
+        "KARABÖRTLEN",
+        "KIZILAĞAÇ",
+        "KIZILYAKA",
+        "MERKEZ-ALPARSLAN",
+        "MERKEZ-AYAZKIYI",
+        "MERKEZ-DEMİRTAŞ",
+        "MERKEZ-KÖPRÜBAŞI",
+        "ÖRNEKKÖY",
+        "PORTAKALLIK",
+        "SARAYYANI",
+        "ŞİRİNKÖY",
+        "YEŞİLÇAM",
+        "YEŞİLOVA"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-01-26",
+      "baslangicTarihi": "2026-01-26",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 4,
+      "il": "MUĞLA",
+      "ilce": "YATAĞAN",
+      "mahalleler": [
+        "HİSARARDI"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Koruma Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-02-10",
+      "baslangicTarihi": "2026-02-10",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 5,
+      "il": "MUĞLA",
+      "ilce": "ULA",
+      "mahalleler": [
+        "ATAKÖY",
+        "ÇITLIK",
+        "ESENTEPE",
+        "KIZILYAKA",
+        "ŞİRİNKÖY",
+        "YEŞİLÇAM"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Koruma Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-01-26",
+      "baslangicTarihi": "2026-01-26",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 6,
+      "il": "MUĞLA",
+      "ilce": "YATAĞAN",
+      "mahalleler": [
+        "ÇAKIRLAR",
+        "GÖKGEDİK",
+        "HACIBAYRAMLAR",
+        "HACIVELİLER",
+        "KAFACAKAPLANCIK",
+        "KIRIKKÖY",
+        "NEBİKÖY",
+        "TURGUT",
+        "TURGUTLAR",
+        "YAVA",
+        "YEŞİLBAĞCILAR",
+        "ZEYTİNKÖY"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-02-10",
+      "baslangicTarihi": "2026-02-10",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 7,
+      "il": "MUĞLA",
+      "ilce": "MENTEŞE",
+      "mahalleler": [
+        "GÖKTEPE",
+        "GÜNLÜCE",
+        "SUNGUR",
+        "ŞENYAYLA"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-01-26",
+      "baslangicTarihi": "2026-01-26",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 8,
+      "il": "MUĞLA",
+      "ilce": "KÖYCEĞİZ",
+      "mahalleler": [
+        "DÖĞÜŞBELEN",
+        "ZAFERLER"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Koruma Bölgesi Karantina",
+      "hastalik": "NEWCASTLE (YALANCI TAVUK VEBASI)",
+      "bildirimTarihi": "2026-03-02",
+      "baslangicTarihi": "2026-03-02",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 9,
+      "il": "MUĞLA",
+      "ilce": "MİLAS",
+      "mahalleler": [
+        "PİNAR"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Koruma Bölgesi Karantina",
+      "hastalik": "ŞAP - SAT 1",
+      "bildirimTarihi": "2026-03-10",
+      "baslangicTarihi": "2026-03-10",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 10,
+      "il": "MUĞLA",
+      "ilce": "KÖYCEĞİZ",
+      "mahalleler": [
+        "HAMİTKÖY",
+        "MERKEZ-GELİŞİM",
+        "MERKEZ-GÜLPINAR",
+        "MERKEZ-ULUCAMİ",
+        "MERKEZ-YENİMAHALLE",
+        "TOPARLAR",
+        "YANGI"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "NEWCASTLE (YALANCI TAVUK VEBASI)",
+      "bildirimTarihi": "2026-03-02",
+      "baslangicTarihi": "2026-03-02",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 11,
+      "il": "MUĞLA",
+      "ilce": "KAVAKLIDERE",
+      "mahalleler": [
+        "ÇAMLIBEL",
+        "ÇATAK",
+        "MENTEŞE",
+        "NEBİLER",
+        "ORTAKÖY"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-01-24",
+      "baslangicTarihi": "2026-01-24",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 12,
+      "il": "MUĞLA",
+      "ilce": "MENTEŞE",
+      "mahalleler": [
+        "DOKUZÇAM"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Koruma Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-01-26",
+      "baslangicTarihi": "2026-01-26",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 13,
+      "il": "MUĞLA",
+      "ilce": "MENTEŞE",
+      "mahalleler": [
+        "TAŞLI"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Koruma Bölgesi Karantina",
+      "hastalik": "ŞAP ?",
+      "bildirimTarihi": "2026-02-22",
+      "baslangicTarihi": "2026-02-22",
+      "bitisTarihi": null,
+      "aktif": true
+    }
+  ]
+}

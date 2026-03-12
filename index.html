@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Muğla ili hayvan hastalıkları haritası ve karantina bölgesi uyarı sistemi">
+  <meta name="theme-color" content="#1e293b">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Hastalık Haritası">
+
+  <title>Muğla – Hastalık Haritası</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/icon-192.png">
+  <link rel="icon" type="image/png" href="./icons/icon-192.png">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Ana stil -->
+  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    /* 3km/10km çember tooltip stili */
+    .zone-tooltip {
+      background: rgba(15,23,42,.88) !important;
+      border: 1px solid rgba(255,255,255,.12) !important;
+      border-radius: 6px !important;
+      color: #e2e8f0 !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      padding: 3px 8px !important;
+      box-shadow: 0 2px 8px rgba(0,0,0,.4) !important;
+    }
+    .zone-tooltip::before { display: none !important; }
+  </style>
+</head>
+<body>
+  <!-- ─── Yükleme Ekranı ─────────────────────────────────────── -->
+  <div id="loading" role="status" aria-label="Yükleniyor">
+    <div class="loading-logo">🗺️</div>
+    <div class="spinner"></div>
+    <p class="loading-text">Uygulama başlatılıyor...</p>
+  </div>
+
+  <!-- ─── Ana Uygulama ─────────────────────────────────────────── -->
+  <div id="app">
+
+    <!-- Üst Toolbar -->
+    <header id="toolbar">
+      <div class="logo" aria-hidden="true">🗺️</div>
+      <div class="title-group">
+        <h1>Muğla Tarım – Hastalık Haritası</h1>
+        <p class="subtitle" id="guncelleme">Veri yükleniyor...</p>
+      </div>
+      <button id="btn-zones" aria-label="Mihrak alanlarını göster/gizle" title="3km/10km Mihrak Alanları">
+        ⭕ Alanlar
+      </button>
+      <button id="btn-locate" aria-label="Konumumu bul ve takip et">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83"/>
+        </svg>
+        Konumum
+      </button>
+    </header>
+
+    <!-- Harita Alanı -->
+    <main id="map-container">
+      <div id="map" role="application" aria-label="Muğla hastalık haritası"></div>
+
+      <!-- Karantina Uyarı Banner'ı -->
+      <div id="alert-banner" role="alert" aria-live="assertive"></div>
+
+      <!-- İstatistik Pilleri -->
+      <div id="stats-bar" aria-label="İstatistikler">
+        <div class="stat-pill">
+          <span class="dot" style="background:#ef4444"></span>
+          <span id="stat-karantina">Yükleniyor...</span>
+        </div>
+        <div class="stat-pill">
+          <span class="dot" style="background:#06b6d4"></span>
+          <span id="stat-hastalik">Yükleniyor...</span>
+        </div>
+        <div class="stat-pill" id="loc-pill" style="display:none">
+          <span class="dot" style="background:#3b82f6"></span>
+          <span id="loc-info"></span>
+        </div>
+      </div>
+
+      <!-- Lejant Paneli -->
+      <nav id="legend" aria-label="Harita lejandı">
+        <button id="legend-toggle" aria-expanded="true">
+          <span>Lejant</span>
+          <span class="legend-arrow">▲</span>
+        </button>
+        <div id="legend-body" style="display:flex;flex-direction:column;gap:6px">
+          <div class="legend-item">
+            <div class="legend-dot koruma"></div>
+            <span>Koruma Bölgesi Karantina</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot gozetime"></div>
+            <span>Gözetim Bölgesi Karantina</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot hastalik"></div>
+            <span>Hastalık Mihrakı</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot normal"></div>
+            <span>Normal Mahalle</span>
+          </div>
+          <div class="legend-item" style="margin-top:4px;padding-top:6px;border-top:1px solid #334155">
+            <div style="width:12px;height:12px;border-radius:50%;background:#3b82f6;flex-shrink:0"></div>
+            <span>Konumunuz</span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Alt Bilgi Paneli -->
+      <aside id="info-panel" aria-label="Bilgi paneli">
+        <div id="panel-handle" role="button" tabindex="0" aria-label="Paneli aç/kapat"></div>
+        <h2 id="panel-title">Genel Bilgi</h2>
+
+        <div class="panel-section">
+          <h4>Uyarı</h4>
+          <p style="font-size:12px;color:#94a3b8;line-height:1.6">
+            Bu uygulama Muğla İl Tarım ve Orman Müdürlüğü verilerini kullanmaktadır.
+            Gösterilen karantina bölgeleri hayvan sağlığı kısıtlamalarını kapsamaktadır.
+            Konum takibini aktif ederek bulunduğunuz mahallenin karantina durumunu anlık öğrenebilirsiniz.
+          </p>
+        </div>
+
+        <div class="panel-section">
+          <h4>Nasıl Kullanılır?</h4>
+          <div class="info-row">
+            <span class="label">1. Adım</span>
+            <span class="value">Haritada mahallelere dokunarak detay bilgisi alın</span>
+          </div>
+          <div class="info-row">
+            <span class="label">2. Adım</span>
+            <span class="value">"Konumum" butonuna basarak anlık konum takibini başlatın</span>
+          </div>
+          <div class="info-row">
+            <span class="label">3. Adım</span>
+            <span class="value">Karantina bölgesine girdiğinizde otomatik uyarı alırsınız</span>
+          </div>
+        </div>
+
+        <div class="panel-section">
+          <h4>Veri Güncelleme</h4>
+          <p style="font-size:12px;color:#94a3b8;line-height:1.6">
+            Veriler düzenli olarak güncellenmektedir.
+            <a href="./admin.html" style="color:#3b82f6;text-decoration:none">→ Veri güncelleme sayfası</a>
+          </p>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <!-- Toast konteyner -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet PIP (Point in Polygon) -->
+  <script src="https://unpkg.com/leaflet-pip@1.1.0/leaflet-pip.min.js"></script>
+
+  <!-- Ana uygulama (ES Module) -->
+  <script type="module" src="./js/app.js"></script>
+
+  <!-- Konum pilini göster -->
+  <script>
+    document.getElementById('loc-info').addEventListener('DOMCharacterDataModified', function() {
+      const pill = document.getElementById('loc-pill');
+      if (pill) pill.style.display = this.textContent ? 'flex' : 'none';
+    });
+  </script>
+</body>
+</html>

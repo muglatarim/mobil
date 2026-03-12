@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eşleştirme Haritası</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <style>
+    html, body { height: 100%; margin: 0; overflow: hidden; }
+    #app { display: flex; flex-direction: column; height: 100dvh; }
+
+    /* Toolbar */
+    #toolbar {
+      height: 56px; min-height: 56px;
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px; padding: 0 16px;
+      z-index: 1000;
+    }
+    #toolbar h1 { font-size: 15px; font-weight: 700; flex: 1; }
+    .back-link { color: var(--accent); text-decoration: none; font-size: 20px; }
+
+    /* Mod butonu */
+    .mode-toggle {
+      display: flex; gap: 6px; background: var(--bg-primary);
+      border: 1px solid var(--border); border-radius: var(--radius-sm);
+      padding: 4px;
+    }
+    .mode-btn {
+      border: none; border-radius: 6px; padding: 5px 12px;
+      font-size: 12px; font-weight: 500; font-family: inherit;
+      cursor: pointer; color: var(--text-muted); background: none;
+      transition: var(--transition);
+    }
+    .mode-btn.active { background: var(--accent); color: #fff; }
+
+    /* Harita */
+    #map-container { flex: 1; position: relative; overflow: hidden; }
+    #map { width: 100%; height: 100%; }
+
+    /* Lejant */
+    #legend {
+      position: absolute; bottom: 16px; right: 16px;
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 12px 14px; z-index: 500;
+      min-width: 200px; box-shadow: var(--shadow);
+    }
+    #legend h4 { font-size: 12px; font-weight: 700; margin-bottom: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
+    .leg-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+    .leg-dot { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+    /* Sayaçlar */
+    #stats-bar { position: absolute; top: 12px; left: 12px; z-index: 500; display: flex; flex-direction: column; gap: 6px; }
+    .stat-pill {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: 99px; padding: 5px 14px; font-size: 12px; font-weight: 600;
+      color: var(--text-secondary); display: flex; align-items: center; gap: 6px;
+      box-shadow: var(--shadow);
+    }
+    .dot8 { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    /* Panel - atanmamışlar */
+    #side-panel {
+      position: absolute; top: 0; right: 0; bottom: 0;
+      width: 300px; background: var(--bg-secondary);
+      border-left: 1px solid var(--border);
+      overflow-y: auto; z-index: 600;
+      transform: translateX(100%);
+      transition: transform .3s ease;
+      box-shadow: var(--shadow-lg);
+    }
+    #side-panel.open { transform: translateX(0); }
+    #panel-toggle {
+      position: absolute; top: 50%; right: 0; transform: translateY(-50%);
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-right: none; border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+      padding: 12px 6px; cursor: pointer; z-index: 601; font-size: 16px;
+      color: var(--text-secondary);
+    }
+    .panel-inner { padding: 16px; }
+    .panel-inner h3 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+    .panel-inner p { font-size: 12px; color: var(--text-muted); margin-bottom: 16px; line-height: 1.5; }
+
+    .unmatched-group { margin-bottom: 16px; }
+    .unmatched-group .ilce-lbl {
+      font-size: 10px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--text-muted);
+      margin-bottom: 6px; padding-bottom: 4px;
+      border-bottom: 1px solid var(--border);
+    }
+    .unmatched-item {
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: var(--radius-sm); padding: 8px 12px; margin-bottom: 5px;
+      font-size: 12px; color: var(--text-primary); cursor: pointer;
+      transition: var(--transition);
+      display: flex; align-items: center; gap: 8px;
+    }
+    .unmatched-item:hover { border-color: var(--warning); background: var(--warning-bg); }
+    .unmatched-item .ui-icon { font-size: 14px; }
+
+    /* Popup özelleştirme */
+    .leaflet-popup-content-wrapper {
+      background: var(--bg-secondary) !important;
+      color: var(--text-primary) !important;
+      border: 1px solid var(--border) !important;
+      border-radius: var(--radius) !important;
+    }
+    .leaflet-popup-tip { background: var(--bg-secondary) !important; }
+    .popup-content h3 { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+    .popup-content .detail-row { display: flex; gap: 6px; font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+    .popup-content .detail-row span:first-child { color: var(--text-muted); min-width: 100px; }
+    .popup-content .sis-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 99px; font-size: 11px; margin-bottom: 8px;
+      background: rgba(59,130,246,.15); color: var(--accent); border: 1px solid rgba(59,130,246,.4);
+    }
+    .popup-content .warn-badge {
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 99px; font-size: 11px; margin-bottom: 8px;
+      background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border);
+    }
+
+    .leaflet-control-attribution { display: none !important; }
+    .leaflet-control-zoom { border: 1px solid var(--border) !important; border-radius: var(--radius-sm) !important; overflow: hidden; }
+    .leaflet-control-zoom a { background: var(--bg-secondary) !important; color: var(--text-primary) !important; border-color: var(--border) !important; }
+  </style>
+</head>
+<body>
+<div id="app">
+  <header id="toolbar">
+    <a href="./eslesme.html" class="back-link" title="Eşleştirme Yönetimine Dön">←</a>
+    <h1>🗺️ Eşleştirme Haritası</h1>
+    <div class="mode-toggle">
+      <button class="mode-btn active" id="btn-eslesme" onclick="setMod('eslesme')">Eşleştirme Durumu</button>
+      <button class="mode-btn" id="btn-normal" onclick="setMod('normal')">Normal Harita</button>
+    </div>
+    <a href="./eslesme.html" style="font-size:13px;color:var(--accent);text-decoration:none;margin-left:8px">Eşleştirmeye Git →</a>
+  </header>
+
+  <div id="map-container">
+    <div id="map"></div>
+
+    <!-- İstatistikler -->
+    <div id="stats-bar">
+      <div class="stat-pill"><span class="dot8" style="background:#3b82f6"></span><span id="cnt-eslesli">–</span> Eşleştirilmiş</div>
+      <div class="stat-pill"><span class="dot8" style="background:#f59e0b"></span><span id="cnt-atanamayan">–</span> Atanmamış</div>
+      <div class="stat-pill"><span class="dot8" style="background:#ef4444"></span><span id="cnt-sistemyok">–</span> Sistemde Eşleşmemiş</div>
+    </div>
+
+    <!-- Lejant -->
+    <div id="legend">
+      <h4 id="legend-title">Eşleştirme Durumu</h4>
+      <div id="legend-body">
+        <div class="leg-item"><div class="leg-dot" style="background:#3b82f6;opacity:.7"></div>Sisteme eşleştirilmiş</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#f59e0b;opacity:.8"></div>GeoJSON'da var, sistemde atanmamış</div>
+        <div class="leg-item"><div class="leg-dot" style="background:#ef4444;opacity:.6"></div>Sistem kaydı var, GeoJSON eşleşmesi yok</div>
+      </div>
+    </div>
+
+    <!-- Sağ panel (atanmamışlar) -->
+    <button id="panel-toggle" onclick="togglePanel()">📋</button>
+    <div id="side-panel">
+      <div class="panel-inner">
+        <h3>🏘️ Atanmamış GeoJSON Mahalleleri</h3>
+        <p>Bu mahallelerin harita üzerindeki konumuna bakarak sistem kayıtlarıyla eşleştirebilirsiniz. Bir mahalleye tıkladığınızda haritada o bölgeye gidilir.</p>
+        <div id="unmatched-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// ─── Global ──────────────────────────────────────────────────────────────────
+let map, geoLayer;
+let eslesmeData, geoData;
+let currentMod = 'eslesme';
+
+// Kimlikno → sistem mahalle listesi
+let kimlikToSistem = {};
+// Atanmamış GeoJSON kimlikno seti
+let atanamayenSet = new Set();
+// Sistemde eşleşmemiş (eslesmeler.length===0) olan sistem mahalle isimleri
+let sistemYoksuzlar = [];
+
+// ─── Başlat ──────────────────────────────────────────────────────────────────
+async function init() {
+  map = L.map('map', { center: [37.15, 28.36], zoom: 9, zoomControl: false });
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    maxZoom: 19, subdomains: 'abcd'
+  }).addTo(map);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  const [e, g] = await Promise.all([
+    fetch('./data/eslesme.json').then(r => r.json()),
+    fetch('./data/mahalleler_karantina.json').then(r => r.json()),
+  ]);
+  eslesmeData = e;
+  geoData = g;
+
+  // Kimlik → sistem eşleme haritası
+  Object.values(eslesmeData.eslesmeler).forEach(v => {
+    v.eslesmeler.forEach(kno => {
+      if (!kimlikToSistem[kno]) kimlikToSistem[kno] = [];
+      kimlikToSistem[kno].push({ ilce: v.sistemIlce, mahalle: v.sistemMahalle });
+    });
+  });
+
+  // Atanmamış GeoJSON
+  const atananSet = new Set(Object.keys(kimlikToSistem).map(Number));
+  geoData.features.forEach(f => {
+    if (!atananSet.has(f.properties.KIMLIKNO)) {
+      atanamayenSet.add(f.properties.KIMLIKNO);
+    }
+  });
+
+  // Sistemde eşleşmemiş
+  sistemYoksuzlar = Object.values(eslesmeData.eslesmeler)
+    .filter(v => v.eslesmeler.length === 0)
+    .map(v => ({ ilce: v.sistemIlce, mahalle: v.sistemMahalle }));
+
+  // İstatistikler
+  document.getElementById('cnt-eslesli').textContent = atananSet.size;
+  document.getElementById('cnt-atanamayan').textContent = atanamayenSet.size;
+  document.getElementById('cnt-sistemyok').textContent = sistemYoksuzlar.length;
+
+  renderLayer();
+  buildUnmatchedPanel();
+}
+
+// ─── Katman renklendirme ──────────────────────────────────────────────────────
+function getStyle(feature) {
+  const kno = feature.properties.KIMLIKNO;
+  if (currentMod === 'normal') {
+    // Normal mod: karantina renklemesi
+    if (feature.properties.karantinaAktif) {
+      return feature.properties.karantinaTipi === 'koruma'
+        ? { fillColor:'#ef4444', fillOpacity:.35, color:'#ef4444', weight:1.5, opacity:.8 }
+        : { fillColor:'#f97316', fillOpacity:.25, color:'#f97316', weight:1.5, opacity:.7 };
+    }
+    return { fillColor:'#334155', fillOpacity:.1, color:'#475569', weight:.8, opacity:.6 };
+  }
+  // Eşleştirme modu
+  if (atanamayenSet.has(kno)) {
+    // Atanmamış - turuncu/sarı, parlak
+    return { fillColor:'#f59e0b', fillOpacity:.45, color:'#f59e0b', weight:2, opacity:.9 };
+  }
+  // Eşleştirilmiş - mavi
+  return { fillColor:'#3b82f6', fillOpacity:.25, color:'#3b82f6', weight:.8, opacity:.6 };
+}
+
+function renderLayer() {
+  if (geoLayer) map.removeLayer(geoLayer);
+
+  geoLayer = L.geoJSON(geoData, {
+    style: getStyle,
+    onEachFeature(feature, layer) {
+      layer.on('mouseover', function() {
+        this.setStyle({ ...getStyle(feature), fillOpacity: Math.min(getStyle(feature).fillOpacity + .2, .85), weight: 2.5 });
+      });
+      layer.on('mouseout', function() {
+        geoLayer.resetStyle(this);
+      });
+      layer.on('click', function(ev) {
+        L.DomEvent.stopPropagation(ev);
+        const kno = feature.properties.KIMLIKNO;
+        const atanmamis = atanamayenSet.has(kno);
+        const sistemBilgi = kimlikToSistem[kno] || [];
+
+        let html = `<div class="popup-content"><h3>🏘️ ${feature.properties.AD}</h3>`;
+        html += `<div style="font-size:12px;color:#94a3b8;margin-bottom:8px">${feature.properties.ILCEAD} İlçesi | KIMLIK: ${kno}</div>`;
+
+        if (atanmamis) {
+          html += `<div class="warn-badge">⚠️ Sistemde Atanmamış</div>`;
+        } else {
+          sistemBilgi.forEach(sb => {
+            html += `<div class="sis-badge">🔗 ${sb.ilce} → ${sb.mahalle}</div>`;
+          });
+        }
+
+        // Karantina durumu
+        if (feature.properties.karantinaAktif && feature.properties.karantina?.length) {
+          feature.properties.karantina.forEach(k => {
+            const tip = k.kisitlamaTipi?.includes('Koruma') ? '🔴' : '🟠';
+            html += `<div class="detail-row"><span>Karantina</span><span>${tip} ${k.kisitlamaTipi}</span></div>`;
+            html += `<div class="detail-row"><span>Hastalık</span><span>${k.hastalik}</span></div>`;
+          });
+        }
+        html += '</div>';
+
+        L.popup({ maxWidth: 300 }).setLatLng(ev.latlng).setContent(html).openOn(map);
+      });
+    }
+  }).addTo(map);
+}
+
+// ─── Mod değiştir ─────────────────────────────────────────────────────────────
+function setMod(mod) {
+  currentMod = mod;
+  document.getElementById('btn-eslesme').classList.toggle('active', mod === 'eslesme');
+  document.getElementById('btn-normal').classList.toggle('active', mod === 'normal');
+
+  if (mod === 'eslesme') {
+    document.getElementById('legend-title').textContent = 'Eşleştirme Durumu';
+    document.getElementById('legend-body').innerHTML = `
+      <div class="leg-item"><div class="leg-dot" style="background:#3b82f6;opacity:.7"></div>Sisteme eşleştirilmiş</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#f59e0b;opacity:.8"></div>GeoJSON'da var, sistemde atanmamış</div>
+    `;
+    document.getElementById('stats-bar').style.display = 'flex';
+  } else {
+    document.getElementById('legend-title').textContent = 'Karantina';
+    document.getElementById('legend-body').innerHTML = `
+      <div class="leg-item"><div class="leg-dot" style="background:#ef4444"></div>Koruma Bölgesi</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#f97316"></div>Gözetim Bölgesi</div>
+      <div class="leg-item"><div class="leg-dot" style="background:#475569"></div>Normal</div>
+    `;
+    document.getElementById('stats-bar').style.display = 'none';
+  }
+  renderLayer();
+}
+
+// ─── Sağ panel ─────────────────────────────────────────────────────────────────
+let panelOpen = false;
+function togglePanel() {
+  panelOpen = !panelOpen;
+  document.getElementById('side-panel').classList.toggle('open', panelOpen);
+  document.getElementById('panel-toggle').textContent = panelOpen ? '❌' : '📋';
+}
+
+function buildUnmatchedPanel() {
+  // Atanmamış GeoJSON mahallelerini ilçeye göre grupla
+  const grouped = {};
+  geoData.features.forEach(f => {
+    const kno = f.properties.KIMLIKNO;
+    if (!atanamayenSet.has(kno)) return;
+    const ilce = f.properties.ILCEAD;
+    if (!grouped[ilce]) grouped[ilce] = [];
+    grouped[ilce].push({ ad: f.properties.AD, kno, ilce });
+  });
+
+  let html = '';
+  Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b,'tr')).forEach(([ilce, mahalleler]) => {
+    html += `<div class="unmatched-group">
+      <div class="ilce-lbl">${ilce} (${mahalleler.length})</div>`;
+    mahalleler.sort((a,b) => a.ad.localeCompare(b.ad,'tr')).forEach(m => {
+      html += `<div class="unmatched-item" onclick="flyToMahalle(${m.kno})">
+        <span class="ui-icon">🟡</span>
+        <span>${m.ad}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+
+  document.getElementById('unmatched-list').innerHTML = html;
+}
+
+function flyToMahalle(kno) {
+  const feature = geoData.features.find(f => f.properties.KIMLIKNO === kno);
+  if (!feature) return;
+  const bounds = L.geoJSON(feature).getBounds();
+  map.flyToBounds(bounds, { padding: [40, 40], maxZoom: 15, duration: 1 });
+}
+
+init();
+</script>
+</body>
+</html>
