@@ -1,5 +1,5 @@
 {
-  "guncelleme": "2026-03-13T00:29:15.442Z",
+  "guncelleme": "2026-03-13T16:19:56.253Z",
   "kayitlar": [
     {
       "id": 1,
@@ -171,6 +171,21 @@
     {
       "id": 8,
       "il": "MUĞLA",
+      "ilce": "MİLAS",
+      "mahalleler": [
+        "İÇME"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Koruma Bölgesi Karantina",
+      "hastalik": "ŞAP - SAT 1",
+      "bildirimTarihi": "2026-03-13",
+      "baslangicTarihi": "2026-03-13",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 9,
+      "il": "MUĞLA",
       "ilce": "KÖYCEĞİZ",
       "mahalleler": [
         "DÖĞÜŞBELEN",
@@ -185,7 +200,7 @@
       "aktif": true
     },
     {
-      "id": 9,
+      "id": 10,
       "il": "MUĞLA",
       "ilce": "MİLAS",
       "mahalleler": [
@@ -200,7 +215,57 @@
       "aktif": true
     },
     {
-      "id": 10,
+      "id": 11,
+      "il": "MUĞLA",
+      "ilce": "MİLAS",
+      "mahalleler": [
+        "AĞAÇLIHÖYÜK",
+        "AKYOL",
+        "AVŞAR",
+        "BAHARLI",
+        "BAHÇEBURUN",
+        "BAHÇEKÖY",
+        "BEÇİN",
+        "BÜYÜKDİBEKDERE",
+        "ÇINARLI",
+        "DAMLIBOĞAZ",
+        "DİBEKDERE",
+        "EKİNANBARI",
+        "EPÇE",
+        "KAFACA",
+        "KARAKUYU",
+        "KIRCAĞIZ",
+        "KIZILCAKUYU",
+        "KIZILCAYIKIK",
+        "KORU",
+        "KÖŞK",
+        "KÜÇÜKDİBEKDERE",
+        "MENTEŞ",
+        "MERKEZ",
+        "MERKEZ-AYDINLIKEVLER",
+        "MERKEZ-BURGAZ",
+        "MERKEZ-FEVZİPAŞA",
+        "MERKEZ-FİRUZPAŞA",
+        "MERKEZ-GÜMÜŞLÜK",
+        "MERKEZ-GÜNEŞ",
+        "MERKEZ-HACIİLYAS",
+        "MERKEZ-HAYITLI",
+        "MERKEZ-ŞEVKEDİYE",
+        "MERKEZ-ŞEVKETİYE",
+        "OVAKIŞLACIK",
+        "SAVRAN",
+        "YAŞYER"
+      ],
+      "kisitlamaSebebi": "Hastalık",
+      "kisitlamaTipi": "Gözetim Bölgesi Karantina",
+      "hastalik": "ŞAP - SAT 1",
+      "bildirimTarihi": "2026-03-13",
+      "baslangicTarihi": "2026-03-13",
+      "bitisTarihi": null,
+      "aktif": true
+    },
+    {
+      "id": 12,
       "il": "MUĞLA",
       "ilce": "KÖYCEĞİZ",
       "mahalleler": [
@@ -221,7 +286,7 @@
       "aktif": true
     },
     {
-      "id": 11,
+      "id": 13,
       "il": "MUĞLA",
       "ilce": "KAVAKLIDERE",
       "mahalleler": [
@@ -240,7 +305,7 @@
       "aktif": true
     },
     {
-      "id": 12,
+      "id": 14,
       "il": "MUĞLA",
       "ilce": "MENTEŞE",
       "mahalleler": [
@@ -255,7 +320,7 @@
       "aktif": true
     },
     {
-      "id": 13,
+      "id": 15,
       "il": "MUĞLA",
       "ilce": "MENTEŞE",
       "mahalleler": [

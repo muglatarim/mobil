@@ -1,8 +1,28 @@
 {
-  "guncelleme": "2026-03-13T00:29:14.515Z",
+  "guncelleme": "2026-03-13T16:19:17.941Z",
   "kayitlar": [
     {
       "id": 1,
+      "bildirimNo": "48/26/00019",
+      "il": "MUĞLA",
+      "ilce": "MİLAS",
+      "mahalle": "İÇME",
+      "isletme": "TR480000015998",
+      "tur": "Sığır",
+      "hastalik": "ŞAP - SAT 1",
+      "durum": "Onay",
+      "ihbarTarihi": "2026-03-13",
+      "kordinasyonTarihi": "2026-03-13",
+      "cikisTarihi": "2026-03-13",
+      "onaylamaTarihi": "2026-03-13",
+      "hastalikBitisTarihi": null,
+      "sonZiyaretTarihi": "2026-03-13",
+      "ziyaretSayisi": 2,
+      "enlem": 37.30316699,
+      "boylam": 27.72605895
+    },
+    {
+      "id": 2,
       "bildirimNo": "48/26/00017",
       "il": "MUĞLA",
       "ilce": "MİLAS",
@@ -22,7 +42,7 @@
       "boylam": 27.96780109
     },
     {
-      "id": 2,
+      "id": 3,
       "bildirimNo": "48/26/00015",
       "il": "MUĞLA",
       "ilce": "KÖYCEĞİZ",
@@ -42,7 +62,7 @@
       "boylam": 28.67517471
     },
     {
-      "id": 3,
+      "id": 4,
       "bildirimNo": "48/26/00012",
       "il": "MUĞLA",
       "ilce": "MENTEŞE",
@@ -62,7 +82,7 @@
       "boylam": 28.6723423
     },
     {
-      "id": 4,
+      "id": 5,
       "bildirimNo": "48/26/00007",
       "il": "MUĞLA",
       "ilce": "YATAĞAN",
@@ -82,7 +102,7 @@
       "boylam": 28.07569026
     },
     {
-      "id": 5,
+      "id": 6,
       "bildirimNo": "48/26/00006",
       "il": "MUĞLA",
       "ilce": "ULA",
@@ -102,7 +122,7 @@
       "boylam": 28.42547948
     },
     {
-      "id": 6,
+      "id": 7,
       "bildirimNo": "48/26/00005",
       "il": "MUĞLA",
       "ilce": "KAVAKLIDERE",
