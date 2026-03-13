@@ -243,7 +243,6 @@
       reader.readAsArrayBuffer(file);
     }
 
-    // ─── GeoJSON Birleştirme (Karantina bölgelerini poligonlara embed et) ──
     async function mergeGeoJSON() {
       const file = document.getElementById('file-karantina').files[0];
       if (!file) return;
@@ -251,7 +250,6 @@
       log(logId, '\n🗺️ GeoJSON birleştirme başlatıldı...');
 
       try {
-        // 1. Karantina verilerini işle
         const reader = new FileReader();
         reader.onload = async function(e) {
           const wb = XLSX.read(e.target.result, { type: 'array' });
@@ -272,35 +270,84 @@
             };
           }).filter(r => r.aktif);
 
-          // 2. Mahalleler.json'u yükle
-          log(logId, '📡 Orjinal Mahalleler.json yükleniyor...');
-          const geoRes = await fetch('./Mahalleler.json');
+          // 2. Mahalleler.json ve eslesme.json'u yükle
+          log(logId, '📡 Veriler yükleniyor (Mahalleler.json & eslesme.json)...');
+          const [geoRes, eslesmeRes] = await Promise.all([
+            fetch('./Mahalleler.json'),
+            fetch('./data/eslesme.json').catch(() => null)
+          ]);
+          
           const geo = await geoRes.json();
+          const eslesmeData = eslesmeRes ? await eslesmeRes.json() : { eslesmeler: {} };
 
-          // 3. Normalizasyon ve Eşleştirme
+          // 3. Normalizasyon Fonksiyonu
           const normalize = (s) => (s || '').toString().toUpperCase().trim()
             .replace(/İ/g, 'I').replace(/Ğ/g, 'G').replace(/Ü/g, 'U')
             .replace(/Ş/g, 'S').replace(/Ö/g, 'O').replace(/Ç/g, 'C');
 
-          const karantinaMap = new Map();
+          // eslesme.json'u daha hızlı arama için normalize edilmiş anahtarlarla Map'e alalım
+          const normEslesmeMap = new Map();
+          if (eslesmeData.eslesmeler) {
+            Object.keys(eslesmeData.eslesmeler).forEach(rawKey => {
+              const parts = rawKey.split('|');
+              if (parts.length === 2) {
+                const normKey = normalize(parts[0]) + '|' + normalize(parts[1]);
+                normEslesmeMap.set(normKey, eslesmeData.eslesmeler[rawKey]);
+              }
+            });
+          }
+
+          // 4. Eşleştirme Hazırlığı (KIMLIKNO -> Kısıtlamalar)
+          const geoIdKısıtlamaMap = new Map();
+
           karantinaList.forEach(k => {
+            const ilceNorm = normalize(k.ilce);
             k.mahalleler.forEach(m => {
-              const key = normalize(m) + '|' + normalize(k.ilce);
-              const mevcut = karantinaMap.get(key) || [];
-              mevcut.push({
-                hastalik: k.hastalik,
-                kisitlamaTipi: k.kisitlamaTipi,
-                baslangicTarihi: k.baslangicTarihi
-              });
-              karantinaMap.set(key, mevcut);
+              const mahalleNorm = normalize(m);
+              const key = ilceNorm + '|' + mahalleNorm;
+              
+              const manuel = normEslesmeMap.get(key);
+              if (manuel && manuel.eslesmeler && manuel.eslesmeler.length > 0) {
+                // Manuel eşleşen KIMLIKNO'lar için kısıtlamayı ekle
+                manuel.eslesmeler.forEach(id => {
+                  const mevcut = geoIdKısıtlamaMap.get(id) || [];
+                  mevcut.push({
+                    hastalik: k.hastalik,
+                    kisitlamaTipi: k.kisitlamaTipi,
+                    baslangicTarihi: k.baslangicTarihi
+                  });
+                  geoIdKısıtlamaMap.set(id, mevcut);
+                });
+              } else {
+                // Otomatik eşleştirme için (ileride kullanılabilir, şimdilik poligon döngüsünde bakılacak)
+              }
             });
           });
 
-          // 4. Embed et
+          // 5. Poligonları İşaretle
           let count = 0;
           geo.features.forEach(f => {
-            const key = normalize(f.properties.AD) + '|' + normalize(f.properties.ILCEAD);
-            const kisitlamalar = karantinaMap.get(key) || [];
+            const id = f.properties.KIMLIKNO;
+            const adNorm = normalize(f.properties.AD);
+            const ilceNorm = normalize(f.properties.ILCEAD);
+            
+            // a) Önce manuel eşleşmiş ID var mı bak
+            let kisitlamalar = geoIdKısıtlamaMap.get(id) || [];
+            
+            // b) Yoksa, doğrudan isim eşleşmesi var mı bak (Excel'den)
+            if (kisitlamalar.length === 0) {
+              const excelKisit = karantinaList.find(k => 
+                normalize(k.ilce) === ilceNorm && k.mahalleler.some(m => normalize(m) === adNorm)
+              );
+              if (excelKisit) {
+                kisitlamalar.push({
+                  hastalik: excelKisit.hastalik,
+                  kisitlamaTipi: excelKisit.kisitlamaTipi,
+                  baslangicTarihi: excelKisit.baslangicTarihi
+                });
+              }
+            }
+
             if (kisitlamalar.length > 0) {
               f.properties.karantina = kisitlamalar;
               f.properties.karantinaAktif = true;
