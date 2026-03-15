@@ -110,9 +110,28 @@ function initLegend() {
   }
 }
 
-// Durum yönetimi
 let isMapReady = false;
 let desteklemeLoaded = false;
+let deferredPrompt = null;
+
+// PWA Kurulum Yönetimi
+window.addEventListener('beforeinstallprompt', (e) => {
+  // Varsayılan banner'ı engelle (isteğe bağlı, ama butonu göstermek için yakalamalıyız)
+  e.preventDefault();
+  deferredPrompt = e;
+  
+  // Bilgi sekmesindeki kurulum kartını göster
+  const installCard = document.getElementById('pwa-install-card');
+  if (installCard) installCard.style.display = 'block';
+  console.log('[PWA] Kurulum istemi yakalandı.');
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredPrompt = null;
+  const installCard = document.getElementById('pwa-install-card');
+  if (installCard) installCard.style.display = 'none';
+  showToast('✅ Uygulama başarıyla yüklendi!', 'success', 3000);
+});
 
 // Sekmeler arası geçiş
 function initTabs() {
@@ -225,7 +244,8 @@ function bindNavButtons() {
     { id: 'btn-kupe-buyukbas', url: 'https://www.turkiye.gov.tr/gtvh-kupe-ile-buyukbas-hayvan-sorgulama' },
     { id: 'btn-kupe-kucukbas', url: 'https://www.turkiye.gov.tr/gtvh-kupe-ile-kucukbas-hayvan-sorgulama' },
     { id: 'btn-wv-destek-open', url: 'https://muglatarim.github.io/desteklemeler/' },
-    { id: 'btn-allow-notif', action: 'notif' }
+    { id: 'btn-allow-notif', action: 'notif' },
+    { id: 'btn-pwa-install', action: 'install' }
   ];
 
   bindings.forEach(b => {
@@ -240,6 +260,15 @@ function bindNavButtons() {
       } else if (b.action === 'notif') {
         const { requestNotificationPermission } = await import('./notify.js');
         requestNotificationPermission();
+      } else if (b.action === 'install') {
+        if (deferredPrompt) {
+          deferredPrompt.prompt();
+          const { outcome } = await deferredPrompt.userChoice;
+          console.log(`[PWA] Kurulum tercihi: ${outcome}`);
+          deferredPrompt = null;
+          const installCard = document.getElementById('pwa-install-card');
+          if (installCard) installCard.style.display = 'none';
+        }
       }
     });
   });
