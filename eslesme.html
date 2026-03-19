@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mahalle Eşleştirme Yönetimi</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    /* style.css'deki html,body overflow:hidden'i ez */
+    html { overflow: auto !important; height: auto !important; }
+    body {
+      overflow-y: scroll !important;
+      height: auto !important;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 0; margin: 0;
+    }
+    
+    .page-wrap { max-width: 1200px; margin: 0 auto; padding: 20px; flex: 1; }
+    
+    .page-header {
+      background: var(--bg-secondary);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .page-header h1 { font-size: 18px; font-weight: 700; flex: 1; }
+    
+    .stat-row { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px 16px;
+      min-width: 140px;
+      flex: 1;
+    }
+    .stat-card .val { font-size: 24px; font-weight: 700; }
+    .stat-card .lbl { font-size: 11px; color: var(--text-muted); margin-top: 2px; }
+    .stat-card.ok .val { color: var(--success); }
+    .stat-card.warn .val { color: var(--warning); }
+    .stat-card.err .val { color: var(--danger); }
+    .stat-card.info .val { color: var(--accent); }
+    
+    /* Filtre bar */
+    .filter-bar {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+      align-items: center;
+    }
+    .filter-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      color: var(--text-secondary);
+      padding: 6px 14px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .filter-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+    .filter-btn:hover:not(.active) { border-color: var(--accent); color: var(--accent); }
+    
+    .search-input {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-primary);
+      padding: 7px 12px;
+      font-size: 13px;
+      font-family: inherit;
+      flex: 1;
+      min-width: 200px;
+    }
+    .search-input:focus { outline: none; border-color: var(--accent); }
+    
+    /* Eslesme satir */
+    .match-row {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      margin-bottom: 6px;
+      display: grid;
+      grid-template-columns: 180px 1fr auto;
+      gap: 12px;
+      align-items: start;
+      transition: var(--transition);
+    }
+    .match-row:hover { border-color: var(--border-light); }
+    .match-row.onaylandi { border-left: 3px solid var(--success); }
+    .match-row.bekliyor { border-left: 3px solid var(--warning); }
+    .match-row.eslesmedi { border-left: 3px solid var(--danger); }
+    
+    .sistem-info .ilce { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+    .sistem-info .mahalle { font-size: 14px; font-weight: 600; color: var(--text-primary); }
+    .sistem-info .tur-badge {
+      display: inline-block;
+      font-size: 10px;
+      padding: 2px 7px;
+      border-radius: 99px;
+      margin-top: 4px;
+    }
+    .tur-badge.birebir { background: var(--success-bg); color: var(--success); }
+    .tur-badge.merkez { background: var(--info-bg); color: var(--info); }
+    .tur-badge.otomatik { background: var(--warning-bg); color: var(--warning); }
+    .tur-badge.eslesmedi { background: var(--danger-bg); color: var(--danger); }
+    
+    .geo-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .geo-tag {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      cursor: default;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .geo-tag .remove-btn {
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 13px;
+      padding: 0;
+      line-height: 1;
+    }
+    .geo-tag .remove-btn:hover { color: var(--danger); }
+    
+    .add-geo-area { position: relative; }
+    .add-geo-input {
+      background: var(--bg-secondary);
+      border: 1px dashed var(--border);
+      border-radius: 99px;
+      color: var(--text-primary);
+      padding: 4px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      width: 200px;
+    }
+    .add-geo-input:focus { outline: none; border-color: var(--accent); border-style: solid; }
+    
+    .geo-suggest {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      width: 280px;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 50;
+      box-shadow: var(--shadow);
+      margin-top: 4px;
+    }
+    .geo-suggest-item {
+      padding: 8px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      color: var(--text-secondary);
+      border-bottom: 1px solid var(--border);
+    }
+    .geo-suggest-item:last-child { border-bottom: none; }
+    .geo-suggest-item:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+    .geo-suggest-item .gi-ilce { font-size: 10px; color: var(--text-muted); }
+    
+    .action-btns { display: flex; flex-direction: column; gap: 4px; }
+    .btn-sm {
+      background: none;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      padding: 5px 10px;
+      font-size: 12px;
+      font-family: inherit;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: var(--transition);
+    }
+    .btn-sm.onay { border-color: var(--success); color: var(--success); }
+    .btn-sm.onay:hover { background: var(--success-bg); }
+    .btn-sm.temizle { border-color: var(--danger); color: var(--danger); }
+    .btn-sm.temizle:hover { background: var(--danger-bg); }
+    
+    /* Kaydet butonu */
+    .save-bar {
+      position: sticky;
+      bottom: 0;
+      background: var(--bg-secondary);
+      border-top: 1px solid var(--border);
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      z-index: 100;
+    }
+    .btn-kaydet {
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+      transition: var(--transition);
+    }
+    .btn-kaydet:hover { transform: translateY(-1px); }
+    .btn-uygula {
+      background: linear-gradient(135deg, var(--success), #16a34a);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      font-family: inherit;
+      cursor: pointer;
+    }
+    
+    .save-status { font-size: 13px; color: var(--text-muted); flex: 1; }
+    
+    .ilce-group { margin-bottom: 24px; }
+    .ilce-header {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 8px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ilce-header .counts { display: flex; gap: 6px; }
+    .cnt { font-size: 11px; padding: 2px 8px; border-radius: 99px; }
+    .cnt.ok { background: var(--success-bg); color: var(--success); }
+    .cnt.warn { background: var(--warning-bg); color: var(--warning); }
+    .cnt.err { background: var(--danger-bg); color: var(--danger); }
+    
+    /* Atanmamis GeoJSON paneli */
+    .geo-unmatched-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 16px;
+      margin-top: 24px;
+    }
+    .geo-unmatched-panel h3 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+    .geo-pill-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+    .geo-pill {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 4px 10px;
+      font-size: 11px;
+      color: var(--text-muted);
+      cursor: grab;
+    }
+    .geo-pill:hover { border-color: var(--accent); color: var(--accent); }
+    .geo-pill .pill-ilce { font-size: 9px; color: var(--text-muted); margin-right: 3px; }
+    
+    .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--accent); text-decoration: none; font-size: 13px; }
+  </style>
+</head>
+<body>
+
+<header class="page-header">
+  <a href="./index.html" class="back-link" style="font-size:18px">←</a>
+  <h1>🗂️ Mahalle Eşleştirme Yönetimi</h1>
+  <span id="mod-badge" style="font-size:12px;color:var(--text-muted)">Yükleniyor...</span>
+</header>
+
+<div class="page-wrap">
+  <!-- İstatistikler -->
+  <div class="stat-row" id="stats"></div>
+  
+  <!-- Filtre & Arama -->
+  <div class="filter-bar">
+    <button class="filter-btn active" data-filter="tumu" onclick="setFilter('tumu',this)">Tümü</button>
+    <button class="filter-btn" data-filter="onaylandi" onclick="setFilter('onaylandi',this)">✅ Onaylı</button>
+    <button class="filter-btn" data-filter="bekliyor" onclick="setFilter('bekliyor',this)">⚠️ İnceleme Bekliyor</button>
+    <button class="filter-btn" data-filter="eslesmedi" onclick="setFilter('eslesmedi',this)">❌ Eşleşmedi</button>
+    <input type="text" class="search-input" id="search" placeholder="Mahalle ara..." oninput="renderList()">
+    <select id="ilce-filter" class="search-input" style="max-width:200px" onchange="renderList()">
+      <option value="">Tüm İlçeler</option>
+    </select>
+  </div>
+  
+  <!-- Liste -->
+  <div id="match-list"></div>
+  
+  <!-- Atanmamış GeoJSON Mahalleleri -->
+  <div class="geo-unmatched-panel">
+    <h3>🏘️ GeoJSON'da Atanmamış Mahalleler <span id="unmatched-count" style="color:var(--text-muted);font-size:12px"></span></h3>
+    <p style="font-size:12px;color:var(--text-muted);margin-bottom:10px">Bu mahalleler henüz hiçbir sistem kaydına atanmamış. Yukarıdaki eşleştirme formlarına girebilirsiniz.</p>
+    <div class="geo-pill-grid" id="geo-unmatched"></div>
+  </div>
+</div>
+
+<div class="save-bar">
+  <button class="btn-kaydet" onclick="kaydet()">💾 Değişiklikleri Kaydet (eslesme.json)</button>
+  <button class="btn-uygula" onclick="uygula()">🗺️ Haritaya Uygula (mahalleler_karantina.json)</button>
+  <span class="save-status" id="save-status">Son kayıt: –</span>
+</div>
+
+<script type="module">
+import { db } from './js/firebase-config.js';
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+// ─── Global state ─────────────────────────────────────────────────────────────
+let eslesmeData = null;    // tüm eslesme.json
+let geoIndex = {};         // kimlikno -> {ad, ilce}
+let currentFilter = 'tumu';
+
+// Global fonksiyonları export et ki HTML'den çağrılabilsin
+window.setFilter = setFilter;
+window.renderList = renderList;
+window.kaydet = kaydet;
+window.uygula = uygula;
+window.onayla = onayla;
+window.geriAl = geriAl;
+window.temizle = temizle;
+window.removeGeo = removeGeo;
+window.showSuggest = showSuggest;
+window.hideSuggest = hideSuggest;
+window.addGeo = addGeo;
+
+// ─── Başlat ──────────────────────────────────────────────────────────────────
+async function init() {
+  try {
+    const [e, g] = await Promise.all([
+      fetch('./data/eslesme.json').then(r => r.json()),
+      fetch('./Mahalleler.json').then(r => r.json()),
+    ]);
+    eslesmeData = e;
+    
+    // GeoJSON indeksi
+    g.features.forEach(f => {
+      geoIndex[f.properties.KIMLIKNO] = {
+        ad: f.properties.AD,
+        ilce: f.properties.ILCEAD,
+        kimlikno: f.properties.KIMLIKNO,
+      };
+    });
+    
+    buildIlceFilter();
+    updateStats();
+    renderList();
+    renderUnmatched();
+    document.getElementById('mod-badge').textContent = 
+      new Date(eslesmeData.metaveriler?.olusturmaTarihi || Date.now())
+        .toLocaleString('tr-TR');
+  } catch(err) {
+    console.error(err);
+    alert('Hata: ' + err.message);
+  }
+}
+
+// ─── İlçe filtresi ────────────────────────────────────────────────────────────
+function buildIlceFilter() {
+  const ilceler = new Set();
+  Object.values(eslesmeData.eslesmeler).forEach(e => ilceler.add(e.sistemIlce));
+  const sel = document.getElementById('ilce-filter');
+  [...ilceler].sort().forEach(il => {
+    const o = document.createElement('option');
+    o.value = il;
+    o.textContent = il;
+    sel.appendChild(o);
+  });
+}
+
+// ─── İstatistikler ────────────────────────────────────────────────────────────
+function updateStats() {
+  const vals = Object.values(eslesmeData.eslesmeler);
+  const onay = vals.filter(e => e.manuelOnaylandi).length;
+  const bekle = vals.filter(e => !e.manuelOnaylandi && e.eslesmeler.length > 0).length;
+  const esle = vals.filter(e => e.eslesmeler.length === 0).length;
+  
+  document.getElementById('stats').innerHTML = `
+    <div class="stat-card ok"><div class="val">${onay}</div><div class="lbl">Onaylandı</div></div>
+    <div class="stat-card warn"><div class="val">${bekle}</div><div class="lbl">İnceleme Bekliyor</div></div>
+    <div class="stat-card err"><div class="val">${esle}</div><div class="lbl">Eşleşmedi</div></div>
+    <div class="stat-card info"><div class="val">${vals.length}</div><div class="lbl">Toplam Sistem Mahalle</div></div>
+  `;
+}
+
+// ─── Filtre ───────────────────────────────────────────────────────────────────
+function setFilter(f, btn) {
+  currentFilter = f;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function getRowClass(e) {
+  if (e.manuelOnaylandi) return 'onaylandi';
+  if (e.eslesmeler.length > 0) return 'bekliyor';
+  return 'eslesmedi';
+}
+
+function turBadge(tur) {
+  const map = {
+    birebir: ['birebir', '✓ Birebir'],
+    merkez_prefix: ['merkez', 'MERKEZ-'],
+    parcali: ['otomatik', 'Parçalı'],
+    substring: ['otomatik', 'Benzer'],
+    bosluksuz: ['otomatik', 'Boşluksuz'],
+    eslesmedi: ['eslesmedi', '? Eşleşmedi'],
+  };
+  const [cls, lbl] = map[tur] || ['otomatik', tur];
+  return `<span class="tur-badge ${cls}">${lbl}</span>`;
+}
+
+// ─── Ana liste renderı ────────────────────────────────────────────────────────
+function renderList() {
+  const q = document.getElementById('search').value.toUpperCase();
+  const ilceSel = document.getElementById('ilce-filter').value;
+  const container = document.getElementById('match-list');
+  
+  // Filtrelenmiş kayıtlar
+  const entries = Object.entries(eslesmeData.eslesmeler).filter(([key, e]) => {
+    if (ilceSel && e.sistemIlce !== ilceSel) return false;
+    if (q && !e.sistemMahalle.toUpperCase().includes(q) && !e.sistemIlce.toUpperCase().includes(q)) return false;
+    const cls = getRowClass(e);
+    if (currentFilter === 'onaylandi' && cls !== 'onaylandi') return false;
+    if (currentFilter === 'bekliyor' && cls !== 'bekliyor') return false;
+    if (currentFilter === 'eslesmedi' && cls !== 'eslesmedi') return false;
+    return true;
+  });
+  
+  // İlçe bazında grupla
+  const grouped = {};
+  entries.forEach(([key, e]) => {
+    if (!grouped[e.sistemIlce]) grouped[e.sistemIlce] = [];
+    grouped[e.sistemIlce].push([key, e]);
+  });
+  
+  let html = '';
+  Object.entries(grouped).sort(([a],[b]) => a.localeCompare(b)).forEach(([ilce, rows]) => {
+    const onay = rows.filter(([,e]) => e.manuelOnaylandi).length;
+    const bekle = rows.filter(([,e]) => !e.manuelOnaylandi && e.eslesmeler.length > 0).length;
+    const esle = rows.filter(([,e]) => e.eslesmeler.length === 0).length;
+    
+    html += `<div class="ilce-group">
+      <div class="ilce-header">
+        ${ilce}
+        <div class="counts">
+          ${onay > 0 ? `<span class="cnt ok">✅ ${onay}</span>` : ''}
+          ${bekle > 0 ? `<span class="cnt warn">⚠️ ${bekle}</span>` : ''}
+          ${esle > 0 ? `<span class="cnt err">❌ ${esle}</span>` : ''}
+        </div>
+      </div>`;
+    
+    rows.forEach(([key, e]) => {
+      const cls = getRowClass(e);
+      const geoTagsHtml = e.eslesmeler.map(kno => {
+        const g = geoIndex[kno];
+        const ad = g ? g.ad : ('(#'+kno+')');
+        return `<div class="geo-tag">
+          ${ad}
+          <button class="remove-btn" onclick="removeGeo('${escKey(key)}',${kno})" title="Kaldır">×</button>
+        </div>`;
+      }).join('');
+      
+      html += `<div class="match-row ${cls}" id="row-${key.replace(/[|]/g,'_')}">
+        <div class="sistem-info">
+          <div class="ilce">${e.sistemIlce}</div>
+          <div class="mahalle">${e.sistemMahalle}</div>
+          ${turBadge(e.eslesmeTuru)}
+        </div>
+        <div>
+          <div class="geo-tags">${geoTagsHtml}</div>
+          <div class="add-geo-area" style="margin-top:8px">
+            <input type="text" class="add-geo-input" placeholder="+ GeoJSON mahalle ekle..."
+              oninput="showSuggest(this,'${escKey(key)}','${escKey(e.sistemIlce)}')"
+              onblur="hideSuggest(this)"
+              autocomplete="off">
+            <div class="geo-suggest" id="suggest-${key.replace(/[|]/g,'_')}" style="display:none"></div>
+          </div>
+        </div>
+        <div class="action-btns">
+          ${cls !== 'onaylandi' 
+            ? `<button class="btn-sm onay" onclick="onayla('${escKey(key)}')">✓ Onayla</button>` 
+            : `<button class="btn-sm" onclick="geriAl('${escKey(key)}')">↩ Geri Al</button>`}
+          <button class="btn-sm temizle" onclick="temizle('${escKey(key)}')">✕ Temizle</button>
+        </div>
+      </div>`;
+    });
+    
+    html += `</div>`;
+  });
+  
+  if (!html) html = `<p style="color:var(--text-muted);text-align:center;padding:32px">Sonuç bulunamadı</p>`;
+  container.innerHTML = html;
+}
+
+// ─── Atanmamış GeoJSON ────────────────────────────────────────────────────────
+function renderUnmatched() {
+  const list = eslesmeData.geoEslesmeyenler || [];
+  const cont = document.getElementById('geo-unmatched');
+  document.getElementById('unmatched-count').textContent = `(${list.length} mahalle)`;
+  cont.innerHTML = list.map(g => 
+    `<div class="geo-pill" title="${g.ilce}" data-kno="${g.kimlikno}">
+      <span class="pill-ilce">${g.ilce.slice(0,3)}</span>${g.ad}
+    </div>`
+  ).join('');
+}
+
+// ─── Öneri kutusu ─────────────────────────────────────────────────────────────
+function showSuggest(input, key, ilce) {
+  const q = input.value.toUpperCase().trim();
+  if (q.length < 2) { hideSuggest(input); return; }
+  
+  const rowId = key.replace(/[|]/g,'_');
+  const sug = document.getElementById('suggest-' + rowId);
+  if (!sug) return;
+  
+  // GeoJSON mahallelerini filtrele
+  const matches = Object.values(geoIndex).filter(g => {
+    const gNorm = g.ad.toUpperCase()
+      .replace(/\u0130/g,'I').replace(/\u011e/g,'G').replace(/\u00dc/g,'U')
+      .replace(/\u015e/g,'S').replace(/\u00d6/g,'O').replace(/\u00c7/g,'C')
+      .replace(/\u0131/g,'I').replace(/\u00fc/g,'U').replace(/\u015f/g,'S')
+      .replace(/\u00f6/g,'O').replace(/\u00e7/g,'C').replace(/\u011f/g,'G');
+    return gNorm.includes(q);
+  }).slice(0, 15);
+  
+  if (matches.length === 0) { sug.style.display = 'none'; return; }
+  
+  sug.style.display = 'block';
+  sug.innerHTML = matches.map(g => 
+    `<div class="geo-suggest-item" 
+      onmousedown="addGeo('${escKey(key)}',${g.kimlikno},this.closest('.add-geo-area').querySelector('input'))">
+      ${g.ad} <span class="gi-ilce">/ ${g.ilce}</span>
+    </div>`
+  ).join('');
+}
+
+function hideSuggest(input) {
+  setTimeout(() => {
+    const row = input.closest('.match-row');
+    if (row) {
+      const sug = row.querySelector('.geo-suggest');
+      if (sug) sug.style.display = 'none';
+    }
+  }, 200);
+}
+
+// ─── Eylemler ────────────────────────────────────────────────────────────────
+function escKey(k) { return k.replace(/'/g, "\\'"); }
+
+function addGeo(key, kno, input) {
+  const e = eslesmeData.eslesmeler[key];
+  if (!e) return;
+  if (!e.eslesmeler.includes(kno)) {
+    e.eslesmeler.push(kno);
+    // Atanmamışlardan kaldır
+    eslesmeData.geoEslesmeyenler = eslesmeData.geoEslesmeyenler.filter(g => g.kimlikno !== kno);
+    renderUnmatched();
+  }
+  if (input) input.value = '';
+  updateStats();
+  renderList();
+}
+
+function removeGeo(key, kno) {
+  const e = eslesmeData.eslesmeler[key];
+  if (!e) return;
+  e.eslesmeler = e.eslesmeler.filter(k => k !== kno);
+  // Atanmamışlara geri ekle
+  if (geoIndex[kno]) {
+    const zatenVar = eslesmeData.geoEslesmeyenler.some(g => g.kimlikno === kno);
+    if (!zatenVar) {
+      eslesmeData.geoEslesmeyenler.push({ ad: geoIndex[kno].ad, ilce: geoIndex[kno].ilce, kimlikno: kno });
+    }
+  }
+  renderUnmatched();
+  updateStats();
+  renderList();
+}
+
+function onayla(key) {
+  const e = eslesmeData.eslesmeler[key];
+  if (!e) return;
+  e.manuelOnaylandi = true;
+  updateStats();
+  renderList();
+}
+
+function geriAl(key) {
+  const e = eslesmeData.eslesmeler[key];
+  if (!e) return;
+  e.manuelOnaylandi = false;
+  updateStats();
+  renderList();
+}
+
+function temizle(key) {
+  const e = eslesmeData.eslesmeler[key];
+  if (!e) return;
+  // Kaldırılan geo mahallelerini atanmamışlara ekle
+  e.eslesmeler.forEach(kno => {
+    if (geoIndex[kno]) {
+      const zatenVar = eslesmeData.geoEslesmeyenler.some(g => g.kimlikno === kno);
+      if (!zatenVar) eslesmeData.geoEslesmeyenler.push({ ad: geoIndex[kno].ad, ilce: geoIndex[kno].ilce, kimlikno: kno });
+    }
+  });
+  e.eslesmeler = [];
+  e.manuelOnaylandi = false;
+  renderUnmatched();
+  updateStats();
+  renderList();
+}
+
+// ─── Kaydet ──────────────────────────────────────────────────────────────────
+function kaydet() {
+  const blob = new Blob([JSON.stringify(eslesmeData, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'eslesme.json';
+  a.click();
+  document.getElementById('save-status').textContent = 
+    'İndirildi: ' + new Date().toLocaleTimeString('tr-TR') + 
+    ' — data/ klasörüne kopyalayın';
+}
+
+// ─── Haritaya Uygula ─────────────────────────────────────────────────────────
+async function uygula() {
+  try {
+    document.getElementById('save-status').textContent = 'Firestore bulut verisi çekiliyor...';
+    
+    const [g, kDoc] = await Promise.all([
+      fetch('./Mahalleler.json').then(r => r.json()),
+      getDoc(doc(db, "ayarlar", "karantina"))
+    ]);
+    
+    if (!kDoc.exists()) {
+      alert('Firebase karantina verisi bulunamadı!');
+      return;
+    }
+    const kar = kDoc.data();
+    
+    // Esleme haritasini olustur: kimlikno -> sistem mahalle bilgisi
+    const kimlikToSistem = {};
+    Object.values(eslesmeData.eslesmeler).forEach(e => {
+      e.eslesmeler.forEach(kno => {
+        if (!kimlikToSistem[kno]) kimlikToSistem[kno] = [];
+        kimlikToSistem[kno].push({ sistemIlce: e.sistemIlce, sistemMahalle: e.sistemMahalle });
+      });
+    });
+    
+    // Aktif karantinalar: sistem mahalle adi -> kisitlama bilgisi
+    const karantinaMap = new Map(); // normSistemMahalle|normIlce -> kisitlamalar
+    function normTR(s) {
+      return String(s||'').toUpperCase()
+        .replace(/\u0130/g,'I').replace(/\u011e/g,'G').replace(/\u00dc/g,'U')
+        .replace(/\u015e/g,'S').replace(/\u00d6/g,'O').replace(/\u00c7/g,'C')
+        .replace(/\u0131/g,'I').replace(/\u00fc/g,'U').replace(/\u015f/g,'S')
+        .replace(/\u00f6/g,'O').replace(/\u00e7/g,'C').replace(/\u011f/g,'G').trim();
+    }
+    
+    kar.kayitlar.forEach(k => {
+      if (!k.aktif) return;
+      k.mahalleler.forEach(mah => {
+        const key = normTR(mah) + '|' + normTR(k.ilce);
+        const arr = karantinaMap.get(key) || [];
+        arr.push({ hastalik: k.hastalik, kisitlamaTipi: k.kisitlamaTipi, baslangicTarihi: k.baslangicTarihi });
+        karantinaMap.set(key, arr);
+      });
+    });
+    
+    // GeoJSON her mahallesine karantina ata
+    let isaretlenen = 0;
+    g.features.forEach(f => {
+      const kno = f.properties.KIMLIKNO;
+      const sistemBilgiler = kimlikToSistem[kno] || [];
+      
+      // Bu GeoJSON mahallesine atanmis sistem mahallelerinden karantina var mi?
+      let kisitlamalar = [];
+      sistemBilgiler.forEach(sb => {
+        const key = normTR(sb.sistemMahalle) + '|' + normTR(sb.sistemIlce);
+        const k = karantinaMap.get(key);
+        if (k) kisitlamalar.push(...k);
+      });
+      
+      // Eski yontemi de dene (GeoJSON ad direkt eslesmesi)
+      if (kisitlamalar.length === 0) {
+        const geoKey = normTR(f.properties.AD) + '|' + normTR(f.properties.ILCEAD);
+        const k = karantinaMap.get(geoKey);
+        if (k) kisitlamalar.push(...k);
+      }
+      
+      if (kisitlamalar.length > 0) {
+        f.properties.karantina = kisitlamalar;
+        f.properties.karantinaAktif = true;
+        const enAgir = kisitlamalar.find(k => k.kisitlamaTipi?.includes('Koruma'));
+        f.properties.karantinaTipi = enAgir ? 'koruma' : 'gozetime';
+        isaretlenen++;
+      } else {
+        f.properties.karantina = [];
+        f.properties.karantinaAktif = false;
+        f.properties.karantinaTipi = null;
+      }
+    });
+    
+    const blob = new Blob([JSON.stringify(g, null, 0)], {type:'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'mahalleler_karantina.json';
+    a.click();
+    
+    document.getElementById('save-status').textContent = 
+      `${isaretlenen} mahalle karantina olarak işaretlendi → mahalleler_karantina.json indirildi`;
+  } catch(err) {
+    alert('Hata: ' + err.message);
+  }
+}
+
+init();
+</script>
+</body>
+</html>

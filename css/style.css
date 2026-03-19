@@ -1,0 +1,664 @@
+/* =====================================================
+   Hastalık Haritası PWA - Ana Stil
+   Koyu tema, modern mobil-first tasarım
+   ===================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+/* ─── CSS Değişkenleri ─────────────────────────────── */
+:root {
+  --bg-primary: #0f172a;
+  --bg-secondary: #1e293b;
+  --bg-card: #1e293b;
+  --bg-card-hover: #263348;
+  --border: #334155;
+  --border-light: #475569;
+
+  --text-primary: #f1f5f9;
+  --text-secondary: #94a3b8;
+  --text-muted: #64748b;
+
+  --accent: #3b82f6;
+  --accent-hover: #2563eb;
+  --accent-glow: rgba(59, 130, 246, 0.3);
+
+  --danger: #ef4444;
+  --danger-bg: rgba(239, 68, 68, 0.15);
+  --danger-border: rgba(239, 68, 68, 0.4);
+
+  --warning: #f59e0b;
+  --warning-bg: rgba(245, 158, 11, 0.15);
+  --warning-border: rgba(245, 158, 11, 0.4);
+
+  --success: #22c55e;
+  --success-bg: rgba(34, 197, 94, 0.15);
+  --success-border: rgba(34, 197, 94, 0.4);
+
+  --info: #06b6d4;
+  --info-bg: rgba(6, 182, 212, 0.15);
+
+  /* Karantina renkleri */
+  --koruma: #ef4444;
+  --koruma-bg: rgba(239, 68, 68, 0.25);
+  --koruma-border: rgba(239, 68, 68, 0.7);
+
+  --gozetime: #f97316;
+  --gozetime-bg: rgba(249, 115, 22, 0.2);
+  --gozetime-border: rgba(249, 115, 22, 0.6);
+
+  --normal: #334155;
+  --normal-bg: rgba(51, 65, 85, 0.15);
+  --normal-border: rgba(71, 85, 105, 0.5);
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.6);
+
+  --toolbar-h: 60px;
+  --panel-h: 220px;
+  --transition: 0.25s ease;
+}
+
+/* ─── Reset & Base ─────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Inter', -apple-system, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ─── Layout ───────────────────────────────────────── */
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100dvh;
+  width: 100%;
+}
+
+/* ─── Toolbar ──────────────────────────────────────── */
+#toolbar {
+  height: var(--toolbar-h);
+  min-height: var(--toolbar-h);
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  gap: 12px;
+  z-index: 1000;
+  box-shadow: 0 2px 16px rgba(0,0,0,0.3);
+}
+
+#toolbar .logo {
+  width: 38px;
+  height: 38px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+#toolbar .title-group {
+  flex: 1;
+  min-width: 0;
+}
+
+#toolbar h1 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#toolbar .subtitle {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+#btn-locate {
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #fff;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: var(--transition);
+  flex-shrink: 0;
+  box-shadow: 0 2px 8px var(--accent-glow);
+}
+
+#btn-locate:active { transform: scale(0.96); }
+#btn-locate svg { width: 16px; height: 16px; }
+
+#btn-locate.locating {
+  background: linear-gradient(135deg, var(--success), #16a34a);
+  animation: pulse-btn 2s infinite;
+}
+
+@keyframes pulse-btn {
+  0%, 100% { box-shadow: 0 2px 8px rgba(34, 197, 94, 0.4); }
+  50% { box-shadow: 0 2px 16px rgba(34, 197, 94, 0.7); }
+}
+
+/* ─── Harita ───────────────────────────────────────── */
+#map-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#map {
+  width: 100%;
+  height: 100%;
+}
+
+/* Leaflet popup özelleştirme */
+.leaflet-popup-content-wrapper {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  box-shadow: var(--shadow-lg) !important;
+}
+
+.leaflet-popup-tip { background: var(--bg-secondary) !important; }
+
+.popup-content h3 {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: var(--text-primary);
+}
+
+.popup-content .badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: 99px;
+  font-size: 11px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.badge.koruma { background: var(--danger-bg); color: var(--danger); border: 1px solid var(--danger-border); }
+.badge.gozetime { background: var(--warning-bg); color: var(--warning); border: 1px solid var(--warning-border); }
+.badge.hastalik { background: var(--info-bg); color: var(--info); border: 1px solid rgba(6,182,212,0.4); }
+
+.popup-content .detail-row {
+  display: flex;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.popup-content .detail-row span:first-child { color: var(--text-muted); min-width: 80px; }
+
+/* Hastalık marker özel ikon */
+.hastalik-icon {
+  width: 32px !important;
+  height: 32px !important;
+  border-radius: 50% !important;
+  border: 2px solid var(--danger) !important;
+  background: var(--danger-bg) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+  transition: var(--transition) !important;
+}
+
+/* ─── Kullanıcı konumu marker ───────────────────────── */
+.user-location-marker {
+  width: 20px !important;
+  height: 20px !important;
+  border-radius: 50%;
+  background: var(--accent);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 4px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.4);
+  animation: pulse-loc 2s infinite;
+}
+
+@keyframes pulse-loc {
+  0% { box-shadow: 0 0 0 4px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.4); }
+  50% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0.1), 0 2px 8px rgba(0,0,0,0.4); }
+  100% { box-shadow: 0 0 0 4px var(--accent-glow), 0 2px 8px rgba(0,0,0,0.4); }
+}
+
+/* ─── Lejant Paneli ─────────────────────────────────── */
+#legend {
+  position: absolute;
+  z-index: 500;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+}
+
+#legend-toggle {
+  background: none;
+  border: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 0;
+  margin-bottom: 10px;
+}
+
+#legend-body .legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.legend-dot.koruma { background: var(--koruma); }
+.legend-dot.gozetime { background: var(--gozetime); }
+.legend-dot.hastalik { background: var(--info); border-radius: 50%; }
+.legend-dot.normal { background: var(--border-light); }
+
+/* ─── Karantina Uyarı Banner'ı ──────────────────────── */
+#alert-banner {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  width: calc(100% - 32px);
+  max-width: 480px;
+  pointer-events: none;
+}
+
+.alert-card {
+  background: linear-gradient(135deg, rgba(239,68,68,0.15), rgba(239,68,68,0.05));
+  border: 1px solid var(--danger-border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  box-shadow: 0 4px 24px rgba(239, 68, 68, 0.2);
+  backdrop-filter: blur(12px);
+  pointer-events: all;
+  animation: slideIn 0.35s ease;
+  margin-bottom: 8px;
+}
+
+.alert-card.warning {
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+  border-color: var(--warning-border);
+  box-shadow: 0 4px 24px rgba(245, 158, 11, 0.2);
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateY(-16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.alert-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.alert-icon { font-size: 18px; }
+
+.alert-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--danger);
+  flex: 1;
+}
+
+.alert-card.warning .alert-title { color: var(--warning); }
+
+.alert-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 2px;
+  transition: var(--transition);
+}
+
+.alert-close:hover { color: var(--text-primary); }
+
+.alert-body {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+}
+
+.alert-body strong { color: var(--text-primary); }
+
+/* ─── Bilgi View Styles ─────────────────────────── */
+#view-bilgi {
+  background: var(--bg-primary);
+}
+
+.bilgi-container {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.bilgi-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 8px 0;
+}
+
+.bilgi-header h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.bilgi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow);
+}
+
+.bilgi-card h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.bilgi-card p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+
+.bilgi-card p:last-child {
+  margin-bottom: 0;
+}
+
+.bilgi-card .wv-ext-btn {
+  width: 100%;
+}
+
+/* ─── Loading Overlay ─────────────────────────────── */
+#loading {
+  position: fixed;
+  inset: 0;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 9999;
+  transition: opacity 0.5s ease;
+}
+
+#loading.fade-out { opacity: 0; pointer-events: none; }
+
+.spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loading-text {
+  font-size: 14px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+.loading-logo {
+  width: 80px;
+  height: 80px;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: none;
+  overflow: hidden;
+}
+
+/* ─── Toast Bildirimleri ─────────────────────────── */
+#toast-container {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 2000;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 8px;
+  width: calc(100% - 32px);
+  max-width: 360px;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px 16px;
+  font-size: 13px;
+  color: var(--text-primary);
+  box-shadow: var(--shadow);
+  animation: toastIn 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.toast.info { border-left: 3px solid var(--accent); }
+.toast.success { border-left: 3px solid var(--success); }
+.toast.error { border-left: 3px solid var(--danger); }
+.toast.warning { border-left: 3px solid var(--warning); }
+
+/* ─── İstatistik Sayaçları ─────────────────────────── */
+#stats-bar {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 500;
+}
+
+.stat-pill {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 99px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(8px);
+  white-space: nowrap;
+}
+
+.stat-pill .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── Leaflet Control Override ────────────────────── */
+.leaflet-control-attribution { display: none !important; }
+
+.leaflet-control-zoom {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-sm) !important;
+  overflow: hidden;
+  box-shadow: var(--shadow) !important;
+}
+
+.leaflet-control-zoom a {
+  background: var(--bg-secondary) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--bg-card-hover) !important;
+}
+
+/* ─── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border-light); border-radius: 2px; }
+
+/* ─── Utility ──────────────────────────────────────── */
+.hidden { display: none !important; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); }
+
+/* ─── Alt Nav Offset Düzeltmeleri ──────────────────── */
+/* Toast'u alt nav üstüne taşı */
+#toast-container { bottom: 80px; }
+
+/* Zones butonu */
+#btn-zones {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+#btn-zones:hover { color: var(--text-primary); background: var(--bg-card-hover); }
+#btn-zones.active { color: var(--accent); border-color: var(--accent); }
+
+/* Duyurular view padding (16px zaten inline; ama burada da tutalım) */
+#view-duyurular { padding: 16px; padding-top: 0; }
+
+/* ─── Disease Filter ────────────────────────────────── */
+#filter-container {
+  margin-right: 8px;
+}
+#disease-filter {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  font-size: 13px;
+  font-family: inherit;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+#disease-filter:focus {
+  border-color: var(--accent);
+}
+
+/* ─── Hero Section (Giriş) ─────────────────────────── */
+.hero-section {
+  background: linear-gradient(135deg, #1e293b, #0f172a);
+  border-radius: 16px;
+  padding: 24px 20px;
+  margin-bottom: 20px;
+  margin-top: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+.hero-content h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 8px;
+}
+.hero-content p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+}
+.hero-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+.hero-btn {
+  flex: 1;
+  max-width: 160px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 16px 12px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.hero-btn:active { transform: scale(0.96); }
+.hero-btn.primary {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.3);
+  color: #60a5fa;
+}
+.hero-btn .icon { font-size: 24px; }
+.hero-btn .text { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+

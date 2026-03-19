@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="tr">
+<!-- v1.0.1 - 2026-03-15 -->
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description"
+    content="Muğla İl Tarım ve Orman Müdürlüğü – Hastalık Haritası, Duyurular ve Destekleme Sorgulama">
+  <meta name="theme-color" content="#0f172a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Muğla Tarım">
+
+  <title>Muğla Tarım – Hastalık Haritası</title>
+
+  <link rel="manifest" href="./manifest.json">
+  <link rel="apple-touch-icon" href="./icons/gthbLogo.png">
+  <link rel="icon" type="image/png" href="./icons/gthbLogo.png">
+
+  <!-- Leaflet CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <!-- Ana stil -->
+  <link rel="stylesheet" href="./css/style.css">
+
+  <style>
+    /* ── Zone tooltip ── */
+    .zone-tooltip {
+      background: rgba(15, 23, 42, .88) !important;
+      border: 1px solid rgba(255, 255, 255, .12) !important;
+      border-radius: 6px !important;
+      color: #e2e8f0 !important;
+      font-size: 11px !important;
+      font-weight: 600 !important;
+      padding: 3px 8px !important;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, .4) !important;
+    }
+
+    .zone-tooltip::before {
+      display: none !important;
+    }
+
+    /* ── Alt Navigasyon ─────────────────────────────────────────────── */
+    #bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      background: rgba(15, 23, 42, 0.97);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      z-index: 1200;
+      box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+    }
+
+    .nav-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 3px;
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #64748b;
+      font-size: 10px;
+      font-weight: 500;
+      font-family: inherit;
+      transition: color 0.2s;
+      padding: 6px 2px;
+      position: relative;
+    }
+
+    .nav-tab .nav-icon {
+      font-size: 20px;
+      line-height: 1;
+      transition: transform 0.2s;
+    }
+
+    .nav-tab.active {
+      color: #3b82f6;
+    }
+
+    .nav-tab.active .nav-icon {
+      transform: scale(1.15);
+    }
+
+    .nav-tab::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 50%;
+      transform: translateX(-50%) scaleX(0);
+      width: 32px;
+      height: 2px;
+      background: #3b82f6;
+      border-radius: 0 0 4px 4px;
+      transition: transform 0.2s;
+    }
+
+    .nav-tab.active::after {
+      transform: translateX(-50%) scaleX(1);
+    }
+
+    /* ── View Sections ───────────────────────────────────────────────── */
+    .view-section {
+      display: none;
+      position: fixed;
+      top: 56px;
+      /* toolbar yüksekliği */
+      left: 0;
+      right: 0;
+      bottom: 64px;
+      /* nav yüksekliği */
+      overflow-y: auto;
+      background: #0f172a;
+      z-index: 800;
+    }
+
+    .view-section.active {
+      display: block;
+    }
+
+    /* Harita view – özel: leaflet zaten var */
+    #view-harita {
+      display: none;
+      /* active olan tab gösterilir */
+      background: transparent;
+      pointer-events: none;
+      /* altındaki haritaya tıklamayı ilet */
+      overflow: visible;
+    }
+
+    #view-harita.active {
+      display: block;
+      pointer-events: none;
+    }
+
+    /* ── Duyurular ──────────────────────────────────────────────────── */
+    #view-duyurular {
+      padding: 16px;
+      gap: 12px;
+    }
+
+    .duyuru-baslik-bar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .duyuru-baslik-bar h2 {
+      font-size: 18px;
+      font-weight: 700;
+      color: #f1f5f9;
+      margin: 0;
+    }
+
+    .duyuru-bos {
+      color: #64748b;
+      text-align: center;
+      padding: 40px 0;
+      font-size: 14px;
+    }
+
+    .duyuru-card {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 14px 16px;
+      margin-bottom: 12px;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .duyuru-card:active {
+      transform: scale(.98);
+    }
+
+    .duyuru-card.acil {
+      border-left: 4px solid #ef4444;
+    }
+
+    .duyuru-card.onemli {
+      border-left: 4px solid #f59e0b;
+    }
+
+    .duyuru-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .duyuru-kategori {
+      font-size: 10px;
+      font-weight: 700;
+      letter-spacing: .5px;
+      text-transform: uppercase;
+      padding: 2px 8px;
+      border-radius: 20px;
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+    }
+
+    .duyuru-card.acil .duyuru-kategori {
+      background: rgba(239, 68, 68, .15);
+      color: #f87171;
+    }
+
+    .duyuru-card.onemli .duyuru-kategori {
+      background: rgba(245, 158, 11, .15);
+      color: #fbbf24;
+    }
+
+    .duyuru-tarih {
+      font-size: 11px;
+      color: #64748b;
+    }
+
+    .duyuru-baslik {
+      font-size: 14px;
+      font-weight: 600;
+      color: #e2e8f0;
+      margin: 0 0 6px;
+      line-height: 1.4;
+    }
+
+    .duyuru-icerik {
+      font-size: 13px;
+      color: #94a3b8;
+      line-height: 1.6;
+      margin: 0 0 8px;
+    }
+
+    .duyuru-link {
+      display: inline-block;
+      font-size: 12px;
+      color: #3b82f6;
+      text-decoration: none;
+      font-weight: 500;
+    }
+
+    /* ── WebView / Iframe paneller ──────────────────────────────────── */
+    #view-hastalik-haritasi,
+    #view-destekleme {
+      display: none;
+      flex-direction: column;
+      background: #0f172a;
+      z-index: 900;
+    }
+
+    #view-hastalik-haritasi.active,
+    #view-destekleme.active {
+      display: flex;
+    }
+
+    .webview-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 12px;
+      background: #1e293b;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      flex-shrink: 0;
+    }
+
+    .webview-toolbar .wv-url {
+      flex: 1;
+      font-size: 12px;
+      color: #94a3b8;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 6px;
+      padding: 4px 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .wv-open-btn {
+      background: rgba(59, 130, 246, 0.15);
+      color: #60a5fa;
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 6px;
+      padding: 4px 10px;
+      font-size: 11px;
+      cursor: pointer;
+      font-family: inherit;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .webview-frame {
+      flex: 1;
+      border: none;
+      background: #fff;
+    }
+
+    .webview-blocked {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      padding: 32px;
+      text-align: center;
+    }
+
+    .webview-blocked .wv-icon {
+      font-size: 48px;
+    }
+
+    .webview-blocked h3 {
+      color: #e2e8f0;
+      font-size: 16px;
+      margin: 0;
+    }
+
+    .webview-blocked p {
+      color: #94a3b8;
+      font-size: 13px;
+      line-height: 1.6;
+      margin: 0;
+    }
+
+    .wv-ext-btn {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      box-shadow: 0 4px 12px rgba(59, 130, 246, .4);
+    }
+
+    /* ── Harita içinde alt boşluk (nav için) ──────────────────────── */
+    #map-container {
+      padding-bottom: 64px;
+    }
+
+    #info-panel {
+      bottom: 64px;
+      z-index: 1300 !important;
+    }
+
+    #stats-bar {
+      bottom: 74px;
+    }
+
+    /* ── Collapsible Panel (Legend & Filter) ── */
+    .collapsible-panel {
+      position: absolute;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 10px 14px;
+      z-index: 1100;
+      min-width: 170px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+
+    .panel-toggle {
+      background: none;
+      border: none;
+      color: #f1f5f9;
+      font-size: 13px;
+      font-weight: 700;
+      font-family: inherit;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      width: 100%;
+      padding: 0;
+    }
+
+    .panel-body {
+      margin-top: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    #legend {
+      bottom: 84px !important;
+      right: 12px;
+    }
+
+    #disease-filter-panel {
+      bottom: 84px;
+      left: 12px;
+    }
+
+    #disease-filter {
+      width: 100%;
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 6px;
+      color: #f1f5f9;
+      padding: 8px 10px;
+      font-size: 13px;
+      outline: none;
+    }
+
+    @media (max-width: 480px) {
+      .collapsible-panel {
+        min-width: 150px;
+        padding: 10px 12px;
+      }
+
+      #legend {
+        bottom: 80px !important;
+        right: 8px;
+      }
+
+      #disease-filter-panel {
+        bottom: 80px;
+        left: 8px;
+      }
+    }
+
+    /* ── Bildirim izin banner'ı ──────────────────────────────────── */
+    #notif-prompt {
+      position: fixed;
+      top: 60px;
+      left: 12px;
+      right: 12px;
+      background: linear-gradient(135deg, #1e3a5f, #1e293b);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      border-radius: 12px;
+      padding: 14px 16px;
+      z-index: 2000;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+      animation: slideDown 0.3s ease;
+    }
+
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    #notif-prompt .np-icon {
+      font-size: 28px;
+      flex-shrink: 0;
+    }
+
+    #notif-prompt .np-body {
+      flex: 1;
+    }
+
+    #notif-prompt h4 {
+      color: #f1f5f9;
+      font-size: 14px;
+      margin: 0 0 4px;
+    }
+
+    #notif-prompt p {
+      color: #94a3b8;
+      font-size: 12px;
+      line-height: 1.5;
+      margin: 0 0 10px;
+    }
+
+    .np-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .np-allow {
+      background: #3b82f6;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 7px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+    }
+
+    .np-dismiss {
+      background: transparent;
+      color: #64748b;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 8px;
+      padding: 7px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- ─── Yükleme Ekranı ───────────────────────────────────────────── -->
+  <div id="loading" role="status" aria-label="Yükleniyor">
+    <div class="loading-logo">
+      <img src="./icons/gthbLogo.png" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+    </div>
+    <div class="spinner"></div>
+    <p class="loading-text">Uygulama başlatılıyor...</p>
+  </div>
+
+  <!-- ─── Ana Uygulama ─────────────────────────────────────────────── -->
+  <div id="app">
+
+    <!-- Üst Toolbar -->
+    <header id="toolbar">
+      <div class="logo" aria-hidden="true">
+        <img src="./icons/gthbLogo.png" alt="Logo" style="width:100%; height:100%; object-fit:contain;">
+      </div>
+      <div class="title-group">
+        <h1>Muğla İl Tarım ve Orman Müdürlüğü</h1>
+        <p class="subtitle" id="guncelleme">Veri yükleniyor...</p>
+      </div>
+
+      <button id="btn-locate" aria-label="Konumumu bul ve takip et" style="display:none">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="3" />
+          <path
+            d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
+        </svg>
+        Konumum
+      </button>
+    </header>
+
+    <!-- ─── Harita View ─────────────────────────────────────────────── -->
+    <section id="view-harita" class="view-section" data-view="harita">
+      <!-- Bu section yalnızca pointer-events bloğu; harita main içinde -->
+    </section>
+
+    <!-- ─── Harita Alanı (her zaman renderlanır) ────────────────────── -->
+    <main id="map-container">
+      <div id="map" role="application" aria-label="Muğla hastalık haritası"></div>
+      <!-- ... (stats-bar, alert-banner, legend, vs. aynen devam) ... -->
+
+      <!-- Karantina Uyarı Banner'ı -->
+      <div id="alert-banner" role="alert" aria-live="assertive"></div>
+
+      <!-- İstatistik Pilleri -->
+      <div id="stats-bar" aria-label="İstatistikler">
+        <div class="stat-pill">
+          <span class="dot" style="background:#ef4444"></span>
+          <span id="stat-karantina">Yükleniyor...</span>
+        </div>
+        <div class="stat-pill">
+          <span class="dot" style="background:#06b6d4"></span>
+          <span id="stat-hastalik">Yükleniyor...</span>
+        </div>
+        <div class="stat-pill" id="loc-pill" style="display:none">
+          <span class="dot" style="background:#3b82f6"></span>
+          <span id="loc-info"></span>
+        </div>
+      </div>
+
+      <!-- Lejant Paneli -->
+      <nav id="legend" class="collapsible-panel" aria-label="Harita lejandı" style="right: 12px; bottom: 84px;">
+        <button id="legend-toggle" class="panel-toggle" aria-expanded="true">
+          <span>Lejant</span>
+          <span class="legend-arrow">▲</span>
+        </button>
+        <div id="legend-body" class="panel-body" style="display:flex; flex-direction:column; gap:6px">
+          <div class="legend-item">
+            <div class="legend-dot koruma"></div>
+            <span>Koruma Bölgesi</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot gozetime"></div>
+            <span>Gözetim Bölgesi</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot normal"></div>
+            <span>Normal Mahalle</span>
+          </div>
+          <div class="legend-item" style="margin-top:4px; padding-top:6px; border-top:1px solid #334155">
+            <div style="width:12px; height:12px; border-radius:50%; background:#3b82f6; flex-shrink:0"></div>
+            <span>Konumunuz</span>
+          </div>
+        </div>
+      </nav>
+
+      <!-- Hastalık Filtre Paneli -->
+      <nav id="disease-filter-panel" class="collapsible-panel" aria-label="Hastalık filtresi"
+        style="left: 12px; bottom: 84px; display:none">
+        <button id="filter-toggle" class="panel-toggle" aria-expanded="false">
+          <span>Hastalık Filtresi</span>
+          <span class="panel-arrow">▼</span>
+        </button>
+        <div id="filter-body" class="panel-body" style="display:none">
+          <select id="disease-filter" aria-label="Hastalık Seçin">
+            <option value="ALL">Tüm Hastalıklar</option>
+          </select>
+        </div>
+      </nav>
+    </main>
+
+    <!-- Bilgi & Ayarlar View -->
+    <section id="view-bilgi" class="view-section" data-view="bilgi">
+      <div class="bilgi-container" style="padding: 16px;">
+        <div class="bilgi-header">
+          <span class="icon" style="font-size: 24px;">ℹ️</span>
+          <h2>Uygulama Bilgileri</h2>
+        </div>
+
+        <div class="bilgi-card" id="pwa-install-card">
+          <h3>📱 Uygulamayı Yükle</h3>
+          <div id="pwa-status-supported">
+            <p>Hızlı erişim için uygulamayı ana ekranınıza bir uygulama gibi yükleyin.</p>
+            <button id="btn-pwa-install" class="wv-ext-btn"
+              style="background: linear-gradient(135deg, #22c55e, #16a34a); width:100%; margin-bottom:10px; display:none;">💾
+              Şimdi Yükle</button>
+          </div>
+          <div id="pwa-guide-ios"
+            style="border-top: 1px solid rgba(255,255,255,0.05); padding-top:10px; margin-top:10px;">
+            <p style="font-size:12px; color:#94a3b8;"><strong>iPhone/iPad için:</strong> Tarayıcıdaki <b>'Paylaş'</b>
+              <span style="font-size:16px">⎋</span> butonuna basın ve ardından <b>'Ana Ekrana Ekle'</b> seçeneğini
+              seçin.
+            </p>
+          </div>
+        </div>
+
+        <div class="bilgi-card">
+          <h3>📢 Bildirim Ayarları</h3>
+          <p>Karantina bölgelerine girdiğinizde sesli uyarı almak için bildirimleri aktif edin.</p>
+          <button id="btn-allow-notif" class="wv-ext-btn">🔔 Bildirimleri Etkinleştir</button>
+        </div>
+
+        <div class="bilgi-card">
+          <h3>📖 Nasıl Kullanılır?</h3>
+          <div class="info-row">
+            <span class="label">1. Adım</span>
+            <span class="value">Haritada mahallelere dokunarak detay bilgisi alın.</span>
+          </div>
+          <div class="info-row">
+            <span class="label">2. Adım</span>
+            <span class="value">"Konumum" butonuna basarak konum takibini başlatın.</span>
+          </div>
+          <div class="info-row">
+            <span class="label">3. Adım</span>
+            <span class="value">Karantina bölgesine girince sesli bildirim alırsınız.</span>
+          </div>
+        </div>
+
+        <div class="bilgi-card">
+          <h3>⚠️ Yasal Uyarı</h3>
+          <p style="font-size:12px; color:#94a3b8; line-height:1.6;">
+            Bu uygulama Muğla İl Tarım ve Orman Müdürlüğü verilerini kullanmaktadır.
+            Veriler bilgilendirme amaçlıdır; resmi işlemler için Müdürlüğümüzle iletişime geçiniz.
+          </p>
+        </div>
+
+        <div style="text-align:center; padding:20px; color:#64748b; font-size:11px;">
+          © 2026 Muğla İl Tarım ve Orman Müdürlüğü
+        </div>
+      </div>
+    </section>
+    <select id="disease-filter" aria-label="Hastalık Seçin">
+      <option value="ALL">Tüm Hastalıklar</option>
+    </select>
+  </div>
+  </nav>
+
+  </nav>
+  <h3>⚠️ Yasal Uyarı</h3>
+  <p style="font-size:12px; color:#94a3b8; line-height:1.6;">
+    Bu uygulama Muğla İl Tarım ve Orman Müdürlüğü verilerini kullanmaktadır.
+    Veriler bilgilendirme amaçlıdır; resmi işlemler için Müdürlüğümüzle iletişime geçiniz.
+  </p>
+  </div>
+  <!--
+          <div class="bilgi-card">
+            <h3>🔗 Bağlantılar</h3>
+            <a href="./admin.html" class="duyuru-link">➜ Yönetim Paneli (Veri Güncelleme)</a>
+          </div>
+        -->
+  <div style="text-align:center; padding:20px; color:#64748b; font-size:11px;">
+    © 2026 Muğla İl Tarım ve Orman Müdürlüğü
+  </div>
+  </div>
+  </section>
+  </main>
+
+  <!-- ─── Duyurular View (ANA EKRAN) ──────────────────────────────── -->
+  <section id="view-duyurular" class="view-section active" data-view="duyurular">
+    <!-- Giriş / Hızlı Erişim Hero -->
+    <div class="hero-section">
+      <div class="hero-content">
+        <h2>Hoş Geldiniz</h2>
+        <p>Muğla İl Tarım ve Orman Müdürlüğü dijital hizmet paneli.</p>
+        <div class="hero-buttons">
+          <button id="hero-btn-harita" class="hero-btn">
+            <span class="icon">🗺️</span>
+            <span class="text">Hastalık Haritası</span>
+          </button>
+          <button id="hero-btn-destek" class="hero-btn primary">
+            <span class="icon">💰</span>
+            <span class="text">Destekleme Sorgula</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="duyuru-baslik-bar" style="margin-top:10px">
+      <span style="font-size:22px">📢</span>
+      <h2>Güncel Duyurular</h2>
+    </div>
+    <div id="duyuru-list">
+      <div class="duyuru-bos">Duyurular yükleniyor...</div>
+    </div>
+  </section>
+
+  <!-- ─── Küpe Sorgulama View ─────────────────────────────── -->
+  <section id="view-kupe-sorgulama" class="view-section" data-view="kupe-sorgulama">
+    <div class="webview-toolbar">
+      <span style="font-size:16px">🏷️</span>
+      <div class="wv-url">e-Devlet Hayvan Sorgulama</div>
+    </div>
+    <div class="webview-blocked">
+      <div class="wv-icon">🐮</div>
+      <h3>Küpe ile Hayvan Sorgulama</h3>
+      <p>
+        e-Devlet kapısı üzerinden küçükbaş ve büyükbaş hayvanlarınızı küpe numaraları ile sorgulayabilirsiniz.
+        Güvenlik nedeniyle bu işlemler harici tarayıcıda açılmalıdır.
+      </p>
+      <div style="display:flex; flex-direction:column; gap:12px; width:100%; max-width:280px;">
+        <button id="btn-kupe-buyukbas" class="wv-ext-btn">
+          🐄 Büyükbaş Küpe Sorgula
+        </button>
+        <button id="btn-kupe-kucukbas" class="wv-ext-btn"
+          style="background: linear-gradient(135deg, #06b6d4, #0891b2); box-shadow: 0 4px 12px rgba(6,182,212,.4);">
+          🐑 Küçükbaş Küpe Sorgula
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─── Destekleme Sorgulama WebView ──────────────────────────── -->
+  <section id="view-destekleme" class="view-section" data-view="destekleme" style="background:#0f172a">
+    <!--
+      <div class="webview-toolbar">
+        <span style="font-size:16px">💰</span>
+        <div class="wv-url">muglatarim.github.io/desteklemeler</div>
+        <button id="btn-wv-destek-open" class="wv-open-btn">↗ Aç</button>
+      </div>
+    -->
+    <iframe id="destekleme-frame" class="webview-frame" src="about:blank" title="Destekleme Sorgulama"
+      sandbox="allow-scripts allow-same-origin allow-forms allow-popups" loading="lazy"
+      style="width:100%; height:100%; border:none; background:#0f172a;">
+    </iframe>
+  </section>
+
+  </div><!-- #app -->
+
+  <!-- Toast konteyner -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ─── Alt Navigasyon ─────────────────────────────────────────── -->
+  <nav id="bottom-nav" aria-label="Ana navigasyon">
+    <button class="nav-tab active" data-tab="duyurular" aria-label="Duyurular">
+      <span class="nav-icon">📢</span>
+      <span>Duyurular</span>
+    </button>
+    <button class="nav-tab" data-tab="harita" aria-label="Harita">
+      <span class="nav-icon">🗺️</span>
+      <span>Harita</span>
+    </button>
+    <!-- 
+    <button class="nav-tab" data-tab="kupe-sorgulama" aria-label="Küpe Sorgulama">
+      <span class="nav-icon">🏷️</span>
+      <span>Küpe</span>
+    </button>
+  -->
+    <button class="nav-tab" data-tab="destekleme" aria-label="Destekleme Sorgulama">
+      <span class="nav-icon">💰</span>
+      <span>Destek</span>
+    </button>
+    <button class="nav-tab" data-tab="bilgi" aria-label="Uygulama Bilgileri">
+      <span class="nav-icon">ℹ️</span>
+      <span>Bilgi</span>
+    </button>
+  </nav>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet PIP -->
+  <script src="https://unpkg.com/leaflet-pip@1.1.0/leaflet-pip.min.js"></script>
+
+  <!-- Ana uygulama (ES Module) -->
+  <script type="module" src="./js/main.js"></script>
+
+  <!-- PWA Service Worker Kaydı -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('[PWA] Service Worker kaydedildi:', reg.scope))
+          .catch(err => console.warn('[PWA] Service Worker hatası:', err));
+      });
+    }
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,587 @@
+<!DOCTYPE html>
+<html lang="tr">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veri Yönetimi – Muğla Tarım</title>
+  <link rel="stylesheet" href="./css/style.css">
+  <style>
+    body {
+      overflow: auto;
+      padding: 20px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .page-title {
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .page-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .card h3 {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 14px;
+    }
+
+    .file-drop {
+      border: 2px dashed var(--border-light);
+      border-radius: var(--radius-sm);
+      padding: 32px;
+      text-align: center;
+      cursor: pointer;
+      transition: var(--transition);
+      margin-bottom: 14px;
+    }
+
+    .file-drop:hover,
+    .file-drop.dragover {
+      border-color: var(--accent);
+      background: var(--accent-glow);
+    }
+
+    .file-drop p {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 8px;
+    }
+
+    .file-drop .icon {
+      font-size: 36px;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-sm);
+      color: #fff;
+      padding: 10px 18px;
+      font-size: 13px;
+      font-weight: 500;
+      font-family: inherit;
+      cursor: pointer;
+      width: 100%;
+      justify-content: center;
+      transition: var(--transition);
+    }
+
+    .btn:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .log-area {
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      font-family: monospace;
+      max-height: 200px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      margin-top: 12px;
+    }
+
+    .status-ok {
+      color: var(--success);
+    }
+
+    .status-err {
+      color: var(--danger);
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--accent);
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 20px;
+    }
+
+    .back-link:hover {
+      text-decoration: underline;
+    }
+
+    .info-box {
+      background: var(--info-bg);
+      border: 1px solid rgba(6, 182, 212, 0.3);
+      border-radius: var(--radius-sm);
+      padding: 12px 14px;
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    /* Firebase UI */
+    #login-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--bg-primary);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      padding: 20px;
+    }
+
+    .login-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 30px;
+      width: 100%;
+      max-width: 360px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    }
+
+    .login-card h2 {
+      margin-bottom: 20px;
+      text-align: center;
+      font-size: 20px;
+    }
+
+    .login-input {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 12px;
+      margin-bottom: 12px;
+      color: var(--text-primary);
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .user-info {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+      padding: 10px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Giriş Ekranı -->
+  <div id="login-overlay">
+    <div class="login-card">
+      <h2>🔐 Yönetici Girişi</h2>
+      <input type="email" id="login-email" class="login-input" placeholder="E-posta">
+      <input type="password" id="login-password" class="login-input" placeholder="Şifre">
+      <button class="btn" id="btn-login" onclick="login()">Giriş Yap</button>
+      <p id="login-error" class="status-err" style="margin-top:12px; font-size:12px; text-align:center;"></p>
+    </div>
+  </div>
+
+  <!-- Ana İçerik -->
+  <div id="admin-content" class="hidden">
+    <div class="user-info">
+      <span>Giriş yapıldı: <strong id="user-info-email">...</strong></span>
+      <button class="btn"
+        style="width:auto; padding:5px 10px; background:var(--bg-primary); border:1px solid var(--border)"
+        onclick="logout()">Çıkış Yap</button>
+    </div>
+
+    <a href="./index.html" class="back-link">← Haritaya Dön</a>
+    <h1 class="page-title">🔄 Veri Yönetimi (Firebase)</h1>
+    <p class="page-sub">Excel dosyalarını yükleyerek sistemi anında güncelleyin</p>
+
+    <div class="info-box">
+      ℹ️ <strong>Otomatik Güncelleme:</strong> Artık dosyaları manuel kopyalamanıza gerek yok.
+      Excel dosyasını yükleyip "Yükle" butonuna bastığınızda veriler anında tüm kullanıcılara ulaşır.
+    </div>
+
+    <!-- Hastalık_Arama.xls -->
+    <div class="card">
+      <h3>📋 Hastalık Mihrakları (Hastalık_Arama.xls)</h3>
+      <div class="file-drop" id="drop-hastalik" onclick="document.getElementById('file-hastalik').click()">
+        <div class="icon">📍</div>
+        <p>Tıklayın veya buraya sürükleyin</p>
+        <p id="hastalik-fname" style="color:var(--accent);margin-top:4px"></p>
+        <input type="file" id="file-hastalik" accept=".xls,.xlsx">
+      </div>
+      <button class="btn" id="btn-convert-hastalik" disabled onclick="uploadHastalik()">
+        🚀 Firestore'a Yükle (hastaliklar)
+      </button>
+      <div class="log-area" id="log-hastalik">Dosya seçilmedi...</div>
+    </div>
+
+    <!-- KisitlamaMahalleAra.xls -->
+    <div class="card">
+      <h3>🚫 Karantina Bölgeleri (KisitlamaMahalleAra.xls)</h3>
+      <div class="file-drop" id="drop-karantina" onclick="document.getElementById('file-karantina').click()">
+        <div class="icon">🛡️</div>
+        <p>Tıklayın veya buraya sürükleyin</p>
+        <p id="karantina-fname" style="color:var(--accent);margin-top:4px"></p>
+        <input type="file" id="file-karantina" accept=".xls,.xlsx">
+      </div>
+      <button class="btn" id="btn-convert-karantina" disabled onclick="uploadKarantina()">
+        🚀 Firestore'a Yükle (karantina)
+      </button>
+      <div class="log-area" id="log-karantina">Dosya seçilmedi...</div>
+    </div>
+
+    <!-- Duyuru Yönetimi -->
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:14px">
+        <h3 style="margin:0">📢 Duyuru Yönetimi</h3>
+        <!--
+        <button class="btn" style="width:auto; padding:6px 12px; font-size:11px; background:var(--bg-primary); border:1px solid var(--border)" onclick="migrateDuyurular()">📦 Eski Duyuruları Buluta Aktar</button>
+      -->
+      </div>
+      <div id="dy-form"
+        style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px; padding:12px; background:var(--bg-primary); border-radius:var(--radius-sm); border:1px solid var(--border)">
+        <h4 id="dy-form-title" style="font-size:13px; margin-bottom:4px">Yeni Duyuru Ekle</h4>
+        <input id="dy-id" type="hidden">
+        <input id="dy-baslik" type="text" placeholder="Başlık *"
+          style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-size:13px;font-family:inherit;outline:none">
+        <textarea id="dy-icerik" rows="3" placeholder="İçerik *"
+          style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-size:13px;font-family:inherit;resize:vertical;outline:none"></textarea>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <select id="dy-kategori"
+            style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-size:13px;font-family:inherit">
+            <option value="Genel">Genel</option>
+            <option value="Karantina">Karantina</option>
+            <option value="Destekleme">Destekleme</option>
+            <option value="Aşılama">Aşılama</option>
+          </select>
+          <select id="dy-oncelik"
+            style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-size:13px;font-family:inherit">
+            <option value="">Normal</option>
+            <option value="onemli">⚠️ Önemli</option>
+            <option value="acil">🚨 Acil</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <input id="dy-tarih" type="date"
+            style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-size:13px;font-family:inherit">
+          <input id="dy-link" type="url" placeholder="Link (opsiyonel)"
+            style="background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius-sm);padding:9px 12px;color:var(--text-primary);font-size:13px;font-family:inherit">
+        </div>
+        <div style="display:flex; gap:10px">
+          <button class="btn" onclick="saveDuyuru()" id="btn-dy-ekle" style="flex:2">➕ Sisteme Kaydet</button>
+          <button class="btn hidden" onclick="cancelEdit()" id="btn-dy-cancel"
+            style="flex:1; background:var(--bg-primary); border:1px solid var(--border)">Vazgeç</button>
+        </div>
+      </div>
+      <div id="dy-liste" style="display:flex;flex-direction:column;gap:8px"></div>
+    </div>
+  </div>
+
+  <script src="https://unpkg.com/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script type="module">
+    import { auth, db } from './js/firebase-config.js';
+    import { signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { ref, set, push, remove, get, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    // Giriş/Çıkış İşlemleri
+    window.login = async () => {
+      const email = document.getElementById('login-email').value;
+      const pass = document.getElementById('login-password').value;
+      const errEl = document.getElementById('login-error');
+      try {
+        await signInWithEmailAndPassword(auth, email, pass);
+      } catch (err) { errEl.textContent = "Hata: Giriş başarısız."; console.error(err); }
+    };
+
+    window.logout = () => signOut(auth);
+
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById('login-overlay').classList.add('hidden');
+        document.getElementById('admin-content').classList.remove('hidden');
+        document.getElementById('user-info-email').textContent = user.email;
+        loadDuyurular();
+      } else {
+        document.getElementById('login-overlay').classList.remove('hidden');
+        document.getElementById('admin-content').classList.add('hidden');
+      }
+    });
+
+    // Excel Tarih Yardımcısı (Sayı veya DD.MM.YYYY formatını destekler)
+    function excelDateToISO(val) {
+      if (!val) return null;
+      if (typeof val === 'number') {
+        const d = new Date(Math.round((val - 25569) * 86400 * 1000));
+        return d.toISOString().split('T')[0];
+      }
+      if (typeof val === 'string') {
+        const clean = val.split(' ')[0].trim();
+        const parts = clean.split('.');
+        if (parts.length === 3) return `${parts[2]}-${parts[1]}-${parts[0]}`;
+        const dashParts = clean.split('-');
+        if (dashParts.length === 3) return clean;
+      }
+      return null;
+    }
+
+    function log(id, text, cls = '') {
+      const el = document.getElementById(id);
+      el.innerHTML += `<span class="${cls}">${text}</span>\n`;
+      el.scrollTop = el.scrollHeight;
+    }
+
+    // Dosya Sürükle Bırak Ayarı
+    function setupFileDrop(dropId, inputId, fnameId, btnId) {
+      const drop = document.getElementById(dropId);
+      const input = document.getElementById(inputId);
+      const fname = document.getElementById(fnameId);
+      const btn = document.getElementById(btnId);
+
+      input.addEventListener('change', () => { if (input.files[0]) { fname.textContent = input.files[0].name; btn.disabled = false; } });
+      drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('dragover'); });
+      drop.addEventListener('dragleave', () => drop.classList.remove('dragover'));
+      drop.addEventListener('drop', (e) => {
+        e.preventDefault(); drop.classList.remove('dragover');
+        const file = e.dataTransfer.files[0];
+        if (file) { input.files = e.dataTransfer.files; fname.textContent = file.name; btn.disabled = false; }
+      });
+    }
+
+    setupFileDrop('drop-hastalik', 'file-hastalik', 'hastalik-fname', 'btn-convert-hastalik');
+    setupFileDrop('drop-karantina', 'file-karantina', 'karantina-fname', 'btn-convert-karantina');
+
+    // Hastalık Yükleme
+    window.uploadHastalik = async () => {
+      const file = document.getElementById('file-hastalik').files[0];
+      if (!file) return;
+      const logId = 'log-hastalik';
+      document.getElementById(logId).innerHTML = '';
+      log(logId, '📋 Okunuyor: ' + file.name);
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const raw = XLSX.utils.sheet_to_json(ws);
+
+          const kayitlar = raw.map(row => ({
+            bildirimNo: row['Bildirim No'] || '',
+            ilce: row['İlçe'] || '',
+            mahalle: row['Mahalle'] || '',
+            tur: row['Tür'] || '',
+            hastalik: row['Hastalık'] || '',
+            durum: row['Durum'] || '',
+            ihbarTarihi: excelDateToISO(row['İhbar Tarihi']),
+            kordinasyonTarihi: excelDateToISO(row['Varış ve Kordon Tarihi']),
+            cikisTarihi: excelDateToISO(row['Çıkış Tarihi']) || excelDateToISO(row['Sönme Tarihi']) || excelDateToISO(row['Kordonun Kaldırılması Tarihi']) || null,
+            enlem: row['Enlem (X)'] || null,
+            boylam: row['Boylam (Y)'] || null,
+          })).filter(r => r.enlem && r.boylam);
+
+          log(logId, `🔄 Realtime Database güncelleniyor: ${kayitlar.length} kayıt...`);
+
+          // RTDB'de tüm koleksiyonu tek seferde set etmek daha kolaydır (JSON tabanlı)
+          await set(ref(db, "hastaliklar"), kayitlar);
+
+          log(logId, '✅ Başarıyla yüklendi!', 'status-ok');
+        } catch (err) { log(logId, '❌ Hata: ' + err.message, 'status-err'); }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    // Karantina Yükleme
+    window.uploadKarantina = async () => {
+      const file = document.getElementById('file-karantina').files[0];
+      if (!file) return;
+      const logId = 'log-karantina';
+      document.getElementById(logId).innerHTML = '';
+      log(logId, '📋 Okunuyor: ' + file.name);
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const wb = XLSX.read(e.target.result, { type: 'array' });
+          const ws = wb.Sheets[wb.SheetNames[0]];
+          const raw = XLSX.utils.sheet_to_json(ws);
+
+          const kayitlar = raw.map(row => ({
+            ilce: row['İlçe'] || '',
+            mahalleler: (row['Mahalle'] || '').split(',').map(m => m.trim()).filter(Boolean),
+            kisitlamaTipi: row['Kısıtlama Tipi'] || '',
+            hastalik: row['Hastalık'] || '',
+            baslangicTarihi: excelDateToISO(row['Başlangıç Tarihi']),
+            bitisTarihi: excelDateToISO(row['Bitiş Tarihi']) || null,
+            aktif: !row['Bitiş Tarihi'],
+          })).filter(r => r.mahalleler.length > 0);
+
+          log(logId, `🚀 Realtime Database'e ${kayitlar.length} kısıtlama kaydı yükleniyor...`);
+          await set(ref(db, "ayarlar/karantina"), { guncelleme: new Date().toISOString(), kayitlar });
+          log(logId, '✅ Karantina verisi güncellendi!', 'status-ok');
+        } catch (err) { log(logId, '❌ Hata: ' + err.message, 'status-err'); }
+      };
+      reader.readAsArrayBuffer(file);
+    };
+
+    // Duyuru Yükleme (Eskiden JSON'daydı, şimdi Bulut'a aktarır)
+    window.migrateDuyurular = async () => {
+      if (!confirm('duyurular.json dosyasındaki veriler Firebase\'e eklenecek. Onaylıyor musunuz?')) return;
+      try {
+        const res = await fetch('./data/duyurular.json');
+        const data = await res.json();
+        let count = 0;
+        for (const item of data) {
+          await push(ref(db, "duyurular"), {
+            baslik: item.baslik,
+            icerik: item.icerik,
+            kategori: item.kategori || 'Genel',
+            oncelik: item.oncelik || '',
+            tarih: item.tarih || new Date().toISOString().split('T')[0],
+            link: item.link || ''
+          });
+          count++;
+        }
+        alert(`${count} duyuru başarıyla RTDB'ye aktarıldı.`);
+        loadDuyurular();
+      } catch (e) { alert('Hata: duyurular.json bulunamadı veya aktarılamadı.'); }
+    };
+
+    // Duyuru Yönetimi
+    window.saveDuyuru = async () => {
+      const id = document.getElementById('dy-id').value;
+      const baslik = document.getElementById('dy-baslik').value.trim();
+      const icerik = document.getElementById('dy-icerik').value.trim();
+      if (!baslik || !icerik) return alert('Alanları doldurun!');
+
+      const data = {
+        baslik, icerik,
+        kategori: document.getElementById('dy-kategori').value,
+        oncelik: document.getElementById('dy-oncelik').value,
+        tarih: document.getElementById('dy-tarih').value || new Date().toISOString().split('T')[0],
+        link: document.getElementById('dy-link').value.trim()
+      };
+
+      try {
+        if (id) {
+          await set(ref(db, `duyurular/${id}`), data);
+        } else {
+          await push(ref(db, "duyurular"), data);
+        }
+        cancelEdit();
+        loadDuyurular();
+      } catch (e) { alert('Hata: ' + e.message); }
+    };
+
+    window.editDuyuru = (id, dataStr) => {
+      const data = JSON.parse(decodeURIComponent(dataStr));
+      document.getElementById('dy-id').value = id;
+      document.getElementById('dy-baslik').value = data.baslik;
+      document.getElementById('dy-icerik').value = data.icerik;
+      document.getElementById('dy-kategori').value = data.kategori || 'Genel';
+      document.getElementById('dy-oncelik').value = data.oncelik || '';
+      document.getElementById('dy-tarih').value = data.tarih;
+      document.getElementById('dy-link').value = data.link || '';
+
+      document.getElementById('dy-form-title').textContent = '📝 Duyuruyu Düzenle';
+      document.getElementById('btn-dy-ekle').textContent = '💾 Güncelle';
+      document.getElementById('btn-dy-cancel').classList.remove('hidden');
+      document.getElementById('dy-form').scrollIntoView({ behavior: 'smooth' });
+    };
+
+    window.cancelEdit = () => {
+      document.getElementById('dy-id').value = '';
+      document.getElementById('dy-baslik').value = '';
+      document.getElementById('dy-icerik').value = '';
+      document.getElementById('dy-link').value = '';
+      document.getElementById('dy-tarih').value = new Date().toISOString().split('T')[0];
+      document.getElementById('dy-form-title').textContent = 'Yeni Duyuru Ekle';
+      document.getElementById('btn-dy-ekle').textContent = '➕ Sisteme Kaydet';
+      document.getElementById('btn-dy-cancel').classList.add('hidden');
+    };
+
+    window.deleteDuyuru = async (id) => {
+      if (confirm('Silinsin mi?')) { await remove(ref(db, `duyurular/${id}`)); loadDuyurular(); }
+    };
+
+    async function loadDuyurular() {
+      const list = document.getElementById('dy-liste');
+      list.innerHTML = 'Yükleniyor...';
+      try {
+        // Not: RTDB'de orderByChild kullanılır, ancak döndürülen sonuç bir snapshot'tır.
+        // desc sıralama istemci tarafında veya diziye çevrilerek yapılabilir.
+        const snapshot = await get(ref(db, "duyurular"));
+        if (!snapshot.exists()) {
+            list.innerHTML = 'Duyuru yok.';
+            return;
+        }
+
+        const dataArr = [];
+        snapshot.forEach(child => {
+            dataArr.push({ id: child.key, ...child.val() });
+        });
+
+        // Tarihe göre azalan sırala (Yeni en üstte)
+        dataArr.sort((a, b) => b.tarih.localeCompare(a.tarih));
+
+        list.innerHTML = dataArr.map(data => {
+          const dataStr = encodeURIComponent(JSON.stringify(data));
+          return `<div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 14px; display:flex; gap:12px; align-items:center">
+            <div style="flex:1">
+              <div style="font-size:10px; color:var(--text-muted)">${data.tarih} • ${data.kategori}</div>
+              <div style="font-size:13px; font-weight:600">${data.baslik}</div>
+            </div>
+            <div style="display:flex; gap:5px">
+              <button onclick="editDuyuru('${data.id}', '${dataStr}')" style="background:var(--accent-glow); border:1px solid var(--accent); color:var(--accent); border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px">Düzenle</button>
+              <button onclick="deleteDuyuru('${data.id}')" style="background:#450a0a; border:none; color:#f87171; border-radius:6px; padding:5px 10px; cursor:pointer; font-size:12px">Sil</button>
+            </div>
+          </div>`;
+        }).join('');
+      } catch (e) {
+        list.innerHTML = `<div class="status-err">Duyurular yüklenemedi: ${e.message}</div>`;
+      }
+    }
+
+    document.getElementById('dy-tarih').value = new Date().toISOString().split('T')[0];
+  </script>
+</body>
+
+</html>
