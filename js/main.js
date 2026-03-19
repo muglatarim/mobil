@@ -150,7 +150,7 @@ function initTabs() {
       if (target === 'destekleme' && !desteklemeLoaded) {
         desteklemeLoaded = true;
         const frame = document.getElementById('destekleme-frame');
-        if (frame) frame.src = 'https://muglatarim.github.io/desteklemeler/';
+        if (frame) frame.src = 'https://iboo48.github.io/desteklemeler/';
       }
 
       // Tabları güncelle
