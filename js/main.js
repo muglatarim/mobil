@@ -2,6 +2,7 @@
  * app.js - Ana uygulama giriş noktası
  */
 import { loadAllData, getStats, getGuncelleme, getUniqueDiseases } from './data.js';
+import { db } from './firebase-config.js';
 import { initMap, loadMahalleLayer, loadHastalikMarkers, toggleZones, applyDiseaseFilter, getMap } from './map.js';
 import { startTracking, stopTracking, isLocationTracking, setGeoLayers } from './location.js';
 import { requestNotificationPermission, showToast, setSwRegistration, getNotificationStatus } from './notify.js';
