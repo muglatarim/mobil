@@ -131,7 +131,7 @@ export function initMap(containerId) {
   });
 
   // Karanlık harita katmanı (OpenStreetMap tabanlı - ücretsiz)
-  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Dark_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
     attribution: '©OpenStreetMap ©CARTO',
     maxZoom: 19,
     subdomains: 'abcd',
