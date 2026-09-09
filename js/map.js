@@ -1,4 +1,4 @@
-/**
+﻿/**
  * map.js - Leaflet harita işlemleri
  */
 import { getHastaliklar, getGeoJSON, normalizeTR } from './data.js';
@@ -131,7 +131,7 @@ export function initMap(containerId) {
   });
 
   // Karanlık harita katmanı (OpenStreetMap tabanlı - ücretsiz)
-  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+  L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '©OpenStreetMap ©CARTO',
     maxZoom: 19,
     subdomains: 'abcd',
