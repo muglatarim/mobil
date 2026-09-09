@@ -248,9 +248,14 @@
         <p id="hastalik-fname" style="color:var(--accent);margin-top:4px"></p>
         <input type="file" id="file-hastalik" accept=".xls,.xlsx">
       </div>
-      <button class="btn" id="btn-convert-hastalik" disabled onclick="uploadHastalik()">
-        🚀 Firestore'a Yükle (hastaliklar)
-      </button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="btn-convert-hastalik" disabled onclick="uploadHastalik()" style="flex:2">
+          🚀 Yükle (Hastalık)
+        </button>
+        <button class="btn" onclick="clearHastalik()" style="flex:1; background:transparent; border:1px solid #ef4444; color:#ef4444;">
+          🗑️ Temizle
+        </button>
+      </div>
       <div class="log-area" id="log-hastalik">Dosya seçilmedi...</div>
     </div>
 
@@ -263,9 +268,14 @@
         <p id="karantina-fname" style="color:var(--accent);margin-top:4px"></p>
         <input type="file" id="file-karantina" accept=".xls,.xlsx">
       </div>
-      <button class="btn" id="btn-convert-karantina" disabled onclick="uploadKarantina()">
-        🚀 Firestore'a Yükle (karantina)
-      </button>
+      <div style="display:flex; gap:10px;">
+        <button class="btn" id="btn-convert-karantina" disabled onclick="uploadKarantina()" style="flex:2">
+          🚀 Yükle (Karantina)
+        </button>
+        <button class="btn" onclick="clearKarantina()" style="flex:1; background:transparent; border:1px solid #ef4444; color:#ef4444;">
+          🗑️ Temizle
+        </button>
+      </div>
       <div class="log-area" id="log-karantina">Dosya seçilmedi...</div>
     </div>
 
@@ -388,6 +398,29 @@
 
     setupFileDrop('drop-hastalik', 'file-hastalik', 'hastalik-fname', 'btn-convert-hastalik');
     setupFileDrop('drop-karantina', 'file-karantina', 'karantina-fname', 'btn-convert-karantina');
+
+    // Verileri Temizleme
+    window.clearHastalik = async () => {
+      if (!confirm('Tüm hastalık mihrakları haritadan silinecek. (0 hastalık durumu için) Emin misiniz?')) return;
+      const logId = 'log-hastalik';
+      document.getElementById(logId).innerHTML = '';
+      log(logId, '🗑️ Hastalık verileri temizleniyor...');
+      try {
+        await set(ref(db, "hastaliklar"), []);
+        log(logId, '✅ Tüm hastalık verileri temizlendi!', 'status-ok');
+      } catch (err) { log(logId, '❌ Hata: ' + err.message, 'status-err'); }
+    };
+
+    window.clearKarantina = async () => {
+      if (!confirm('Tüm karantina bölgeleri haritadan silinecek. (Kısıtlama kalmadığı durumlar için) Emin misiniz?')) return;
+      const logId = 'log-karantina';
+      document.getElementById(logId).innerHTML = '';
+      log(logId, '🗑️ Karantina verileri temizleniyor...');
+      try {
+        await set(ref(db, "ayarlar/karantina"), { guncelleme: new Date().toISOString(), kayitlar: [] });
+        log(logId, '✅ Tüm karantina verileri temizlendi!', 'status-ok');
+      } catch (err) { log(logId, '❌ Hata: ' + err.message, 'status-err'); }
+    };
 
     // Hastalık Yükleme
     window.uploadHastalik = async () => {
