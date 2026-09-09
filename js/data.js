@@ -55,7 +55,7 @@ export async function loadAllData() {
       });
     }
     _eslesme = { eslesmeler: normalizedEslesme };
-    _geoJSON = processGeoJSON(g, _karantina.kayitlar, _eslesme.eslesmeler);
+    _geoJSON = processGeoJSON(g, _karantina.kayitlar || [], _eslesme.eslesmeler);
     
     return { hastaliklar: _hastaliklar, karantina: _karantina, geoJSON: _geoJSON };
   } catch (err) {
