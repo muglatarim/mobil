@@ -1,4 +1,4 @@
-/* =====================================================
+﻿/* =====================================================
    Hastalık Haritası PWA - Ana Stil
    Koyu tema, modern mobil-first tasarım
    ===================================================== */
@@ -663,8 +663,5 @@ html, body {
 .hero-btn .text { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
 
 
-/* OSM Tile'larini Karanlik Tema Yapma */
-.leaflet-tile-pane {
-    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
-}
+
 
