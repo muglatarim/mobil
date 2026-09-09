@@ -1,4 +1,4 @@
-const CACHE_NAME = 'hastalik-haritasi-v11';
+const CACHE_NAME = 'hastalik-haritasi-v12';
 const STATIC_ASSETS = [
   './',
   './index.html',
